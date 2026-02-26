@@ -1,10 +1,12 @@
 import { Database } from "bun:sqlite";
 import { db } from "./db";
+import type { Server } from "bun";
 
 // 1. Define the shape of your WebSocket data
 interface WebSocketData {
     createdAt: number;
     subscribeTags: string[];
+    server: Server<WebSocketData>;
 }
 
 const server = Bun.serve<WebSocketData>({
@@ -31,6 +33,7 @@ const server = Bun.serve<WebSocketData>({
                 data: {
                     createdAt: Date.now(),
                     subscribeTags: ["#general"],
+                    server,
                 },
             });
             return success ? undefined : new Response("WebSocket upgrade failed", { status: 400 });
@@ -50,13 +53,44 @@ const server = Bun.serve<WebSocketData>({
             ws.subscribe("#general");
         },
         async message(ws, message) {
-            console.log(`Received: ${message}`);
+            // console.log(`Received: ${message}`);
 
             let msg;
             try {
                 msg = JSON.parse(message.toString());
             } catch (e) {
                 return;
+            }
+
+            if (msg.type === "subscribe") {
+                const newTag = msg.tag;
+                if (!newTag) return;
+
+                // Unsubscribe from previous tags
+                ws.data.subscribeTags.forEach((tag) => ws.unsubscribe(tag));
+                ws.data.subscribeTags = [newTag];
+                ws.subscribe(newTag);
+
+                // specific logic to fetch history
+                const tag = db.query("SELECT id FROM tags WHERE name = $name").get({ $name: newTag }) as { id: number } | null;
+
+                if (tag) {
+                    const posts = db.query(`
+                        SELECT p.content, p.timestamp, u.full_name as userName 
+                        FROM posts p 
+                        JOIN users u ON p.user_id = u.id 
+                        WHERE p.tag_id = $tagId 
+                        ORDER BY p.timestamp DESC 
+                        LIMIT 50
+                    `).all({ $tagId: tag.id }) as { content: string, timestamp: string, userName: string }[];
+
+                    // Send history back to client
+                    ws.send(JSON.stringify({
+                        type: "history",
+                        posts: posts.reverse(), // Send oldest first
+                        tag: newTag
+                    }));
+                }
             }
 
             if (msg.type === "post") {
@@ -97,7 +131,7 @@ const server = Bun.serve<WebSocketData>({
                 };
 
                 // 3. Use the server instance to publish to the tag
-                server.publish(tagName, JSON.stringify({
+                ws.data.server.publish(tagName, JSON.stringify({
                     type: "newPost",
                     post: newPost
                 }));
