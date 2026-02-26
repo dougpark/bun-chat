@@ -1,4 +1,7 @@
+
+# Ignore SQLite database files
 *.sqlite
+*.sqlite-journal
 
 # dependencies (bun install)
 node_modules
