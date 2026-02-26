@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bun Chat</title>
+    <!-- Placeholder for local Tailwind CSS -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+        <!-- Zone Header (Status Bar) -->
+        <header id="zone-header" class="bg-blue-700 p-4 text-center text-lg font-bold">
+            #general | Hazard: Green | Weather: Sunny | PIC: Admin
+        </header>
+
+        <!-- Main Chat/Task Content -->
+        <main class="flex-1 p-4 overflow-y-auto">
+            <h1 class="text-2xl font-bold mb-4">Welcome to Bun Chat!</h1>
+
+            <!-- Messages Section -->
+            <section id="messages" class="mb-8">
+                <h2 class="text-xl font-semibold mb-2">Messages</h2>
+                <div id="message-list" class="space-y-2">
+                    <!-- Example Message -->
+                    <div class="bg-gray-800 p-3 rounded-lg">
+                        <p class="text-sm text-gray-400">User A - 10:00 AM</p>
+                        <p>Hello everyone in #general!</p>
+                    </div>
+                </div>
+                <form id="post-form" class="mt-4 flex">
+                    <input type="text" id="post-content" placeholder="Type your message..."
+                        class="flex-1 p-2 rounded-l-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-r-lg">Send</button>
+                </form>
+            </section>
+
+            <!-- Task Board Section -->
+            <section id="task-board">
+                <h2 class="text-xl font-semibold mb-2">Task Board</h2>
+                <div id="task-list" class="space-y-2">
+                    <!-- Example Task -->
+                    <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Task: Clean up common area</p>
+                            <p class="text-sm text-gray-400">Priority: High | Status: Pending</p>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg text-sm">Claim</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer for navigation or other controls (if needed) -->
+        <footer class="bg-gray-800 p-4 text-center text-sm text-gray-500">
+            Bun Chat &copy; 2026
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
