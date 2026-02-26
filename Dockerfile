@@ -12,7 +12,7 @@ RUN bun install
 COPY . .
 
 # Expose the port your Bun app listens on
-EXPOSE 3000
+EXPOSE 3010
 
 # Command to run the application
 CMD ["bun", "run", "server.ts"]

@@ -80,6 +80,6 @@ Your `docker-compose.yml` should map a volume for the `chat.sqlite` file to ensu
 To test on an iPhone or Android device within your network:
 
 1. Find your local IP (`ipconfig getifaddr en0` on macOS).
-2. Navigate to `http://[YOUR_IP]:3000` on the mobile browser.
+2. Navigate to `http://[YOUR_IP]:3010` on the mobile browser.
 
 ```

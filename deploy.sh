@@ -3,9 +3,8 @@
 # the main branch, installs dependencies, and restarts the service.
 # Make sure to run this script with appropriate permissions, especially for restarting the service.
 # Usage: ./deploy.sh
-# Note: Ensure that the .env file is updated with the correct PORT value (3010) before running this script.
-# The service is defined in /etc/systemd/system/bun-chat-qa.service and is set to restart automatically on failure.
-# The service listens on port 3010, which is specified in the .env file and used in the server.ts file.
+# Note: Ensure that the .env file is updated with the correct PORT value (3010) for dev before running this script.
+
 
 # Dev - PORT 3010
 # QA - PORT 4010
@@ -17,7 +16,9 @@ bun install
 sudo systemctl restart bun-chat-qa # Restarts the service 
 
 
+# To setup QA Environment
 # sudo nano /etc/systemd/system/bun-chat-qa.service
+
 # [Unit]
 # Description=Bun Chat QA Server
 # After=network.target
