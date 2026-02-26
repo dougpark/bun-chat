@@ -2,6 +2,8 @@ import { Database } from "bun:sqlite";
 import { db } from "./db";
 import type { Server } from "bun";
 
+const PORT = process.env.PORT || 3010;
+
 // 1. Define the shape of your WebSocket data
 interface WebSocketData {
     createdAt: number;
@@ -10,7 +12,7 @@ interface WebSocketData {
 }
 
 const server = Bun.serve<WebSocketData>({
-    port: 3000,
+    port: PORT || 3010,
     fetch(req, server) {
         const url = new URL(req.url);
 
