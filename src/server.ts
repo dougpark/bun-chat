@@ -12,7 +12,7 @@ interface WebSocketData {
 }
 
 const server = Bun.serve<WebSocketData>({
-    port: PORT || 3010,
+    port: PORT,
     fetch(req, server) {
         const url = new URL(req.url);
 

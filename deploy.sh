@@ -8,18 +8,30 @@
 # The service listens on port 3010, which is specified in the .env file and used in the server.ts file.
 
 # Dev - PORT 3010
-# QA - PORT 3010
+# QA - PORT 4010
 # Prod - PORT 8010
 
 
 git pull origin main
 bun install
-sudo systemctl restart bun-chat-qa # Restarts the service which is locked to port 3010
+sudo systemctl restart bun-chat-qa # Restarts the service 
 
 
-# /etc/systemd/system/bun-chat-qa.service
+# sudo nano /etc/systemd/system/bun-chat-qa.service
+# [Unit]
+# Description=Bun Chat QA Server
+# After=network.target
+
 # [Service]
+# # The root of your project
 # WorkingDirectory=/home/dougpark/Production/bun-chat
-# ExecStart=/home/dougpark/.bun/bin/bun server.ts
-# Environment=PORT=3010
-# Restart=alway
+# # Point Bun to the new location in the src folder
+# ExecStart=/home/dougpark/.bun/bin/bun src/server.ts
+# # Your specific port mapping for QA
+# Environment=PORT=4010
+# Restart=always
+# # Optional: ensures the logs show up under the right name
+# SyslogIdentifier=bun-chat-qa
+
+# [Install]
+# WantedBy=multi-user.target

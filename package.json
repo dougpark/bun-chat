@@ -1,8 +1,12 @@
 {
   "name": "bun-chat",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "start": "bun src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
