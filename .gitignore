@@ -3,6 +3,9 @@
 *.sqlite
 *.sqlite-journal
 
+# Ignore logs
+*.log
+
 # dependencies (bun install)
 node_modules
 
