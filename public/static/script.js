@@ -11,8 +11,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // View Management
     const viewHome = document.getElementById('view-home');
     const viewChat = document.getElementById('view-chat');
+    const viewSettings = document.getElementById('view-settings');
 
     let currentTag = '#general';
+
+    // Theme Logic
+    const html = document.documentElement;
+
+    function applyTheme(isDark) {
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    // Initialize Theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        applyTheme(true);
+    } else {
+        applyTheme(false);
+    }
+
+    window.toggleTheme = () => {
+        const isDark = html.classList.contains('dark');
+        applyTheme(!isDark);
+    };
 
     // WebSocket Setup
     const ws = new WebSocket(`ws://${window.location.host}/ws`);
@@ -58,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewChat.classList.remove('translate-x-full');
         viewChat.classList.add('translate-x-0');
 
+        // Ensure settings is closed
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -67,6 +97,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide animation: Move chat out of view
         viewChat.classList.remove('translate-x-0');
         viewChat.classList.add('translate-x-full');
+
+        // Slide settings out of view
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+    };
+
+    window.openSettings = () => {
+        // Close chat if open
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+
+        // Open settings
+        viewSettings.classList.remove('translate-x-full');
+        viewSettings.classList.add('translate-x-0');
     };
 
     // UI Logic: Forms
@@ -89,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (post.tagName && post.tagName !== currentTag) return;
 
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'bg-white p-3 rounded-lg shadow-sm border border-slate-200 self-start max-w-[85%] animate-fade-in-up';
+        messageDiv.className = 'bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 self-start max-w-[85%] animate-fade-in-up';
 
         // Ensure timestamp is treated as UTC if it's a bare SQLite timestamp string
         let timestamp = post.timestamp;
@@ -99,9 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         messageDiv.innerHTML = `
-            <p class="text-xs font-bold text-indigo-600 mb-1">${post.userName}</p>
-            <p class="text-slate-800">${post.content}</p>
-            <p class="text-[10px] text-slate-400 mt-1">${timeString}</p>
+            <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">${post.userName}</p>
+            <p class="text-slate-800 dark:text-slate-200">${post.content}</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${timeString}</p>
         `;
 
         messageContainer.appendChild(messageDiv);

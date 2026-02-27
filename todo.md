@@ -1,7 +1,7 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-1. Show timezones in client to client local timezone; relative time, 15min ago
+1. done - Show timezones in client to client local timezone; relative time, 15min ago
 2. Implement user-registration
 3. Implement user-login
 4. Implement user-profile page with update name, email, address, phone number, password, etc.
@@ -16,7 +16,7 @@
 7. #tag status at top of UI shows: #tag, color, pic, weather, time
 8. Implement active-user page by #tag
 9. Implement per #tag to-do page with pic level to create, modify, update, delete a to-do and loggin in user to claim
-10. 
+10. done - light/dark system theme
 
 ### Future Features
 - image upload

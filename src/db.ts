@@ -18,6 +18,7 @@ db.run(`
   CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    description TEXT,
     hazard_level TEXT DEFAULT 'green',
     weather TEXT,
     person_in_charge TEXT
@@ -50,8 +51,8 @@ db.run(`
 `);
 
 // Seed initial data (for demonstration)
-db.run(`INSERT OR IGNORE INTO tags (name, hazard_level, weather, person_in_charge) VALUES ('#general', 'green', 'Sunny', 'Admin');`);
-db.run(`INSERT OR IGNORE INTO tags (name, hazard_level, weather, person_in_charge) VALUES ('#medical', 'yellow', 'Rain', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,hazard_level, weather, person_in_charge) VALUES ('#general','General discussion', 'green', 'Sunny', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name,description, hazard_level, weather, person_in_charge) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Rain', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO users (id, full_name, phone_number, physical_address, is_verified, role) VALUES (1, 'Test User', '555-123-4567', '123 Main St', TRUE, 'user');`);
 
 export { db };
