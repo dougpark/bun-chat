@@ -9,8 +9,28 @@ db.run(`
     full_name TEXT NOT NULL,
     phone_number TEXT NOT NULL,
     physical_address TEXT NOT NULL,
+    email TEXT UNIQUE,
+    password_hash TEXT,
     is_verified BOOLEAN DEFAULT FALSE,
     role TEXT DEFAULT 'user' -- 'user' or 'admin'
+  );
+`);
+
+// Try to add new columns if they don't exist (for migration)
+try {
+  db.run("ALTER TABLE users ADD COLUMN email TEXT UNIQUE");
+} catch (e) { }
+try {
+
+  db.run("ALTER TABLE users ADD COLUMN password_hash TEXT");
+} catch (e) { }
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
 
@@ -54,7 +74,7 @@ db.run(`
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#general','General discussion', 'green', 'Normal', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Normal', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#security', 'Security concerns', 'red', 'Normal', 'Admin');`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#hazard', 'Hazardconcerns', 'orange', 'Normal', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#hazard', 'Hazard concerns', 'orange', 'Normal', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#damage', 'Damage concerns', 'green', 'Normal', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO users (id, full_name, phone_number, physical_address, is_verified, role) VALUES (1, 'Test User', '555-123-4567', '123 Main St', TRUE, 'user');`);
 

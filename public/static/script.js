@@ -13,11 +13,143 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewHome = document.getElementById('view-home');
     const viewChat = document.getElementById('view-chat');
     const viewSettings = document.getElementById('view-settings');
+    const viewProfile = document.getElementById('view-profile');
+    const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
 
+    // Auth Elements
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const authError = document.getElementById('auth-error');
+    const profileForm = document.getElementById('profile-form');
+    const profileMessage = document.getElementById('profile-message');
+
     let currentTag = '#general';
     let allTags = [];
+
+    // Auth Logic
+    async function checkAuth() {
+        try {
+            const res = await fetch('/api/me');
+            if (res.ok) {
+                viewAuth.classList.add('hidden');
+                initWebSocket();
+            } else {
+                viewAuth.classList.remove('hidden');
+            }
+        } catch (e) {
+            console.error('Auth check failed:', e);
+            viewAuth.classList.remove('hidden');
+        }
+    }
+
+    // Call immediately
+    checkAuth();
+
+    window.toggleAuthMode = (mode) => {
+        authError.classList.add('hidden');
+        authError.textContent = '';
+        if (mode === 'register') {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        } else {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        }
+    };
+
+    async function handleAuthSubmit(e, url) {
+        e.preventDefault();
+        authError.classList.add('hidden');
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                // Success
+                viewAuth.classList.add('hidden');
+                initWebSocket();
+                e.target.reset();
+            } else {
+                const result = await res.json();
+                authError.textContent = result.error || 'Authentication failed';
+                authError.classList.remove('hidden');
+            }
+        } catch (err) {
+            authError.textContent = 'Network error occurred';
+            authError.classList.remove('hidden');
+        }
+    }
+
+    loginForm.addEventListener('submit', (e) => handleAuthSubmit(e, '/api/login'));
+    registerForm.addEventListener('submit', (e) => handleAuthSubmit(e, '/api/register'));
+
+    // Profile Logic
+    window.openProfile = async () => {
+        // Close other views
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+
+        // Open Profile
+        viewProfile.classList.remove('translate-x-full');
+        viewProfile.classList.add('translate-x-0');
+
+        // Fetch User Data
+        try {
+            const res = await fetch('/api/me');
+            if (res.ok) {
+                const user = await res.json();
+                const form = document.getElementById('profile-form');
+                form.elements['full_name'].value = user.full_name || '';
+                form.elements['email'].value = user.email || '';
+                form.elements['phone_number'].value = user.phone_number || '';
+                form.elements['physical_address'].value = user.physical_address || '';
+            }
+        } catch (e) {
+            console.error('Failed to fetch profile', e);
+        }
+    };
+
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        profileMessage.classList.add('hidden');
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                profileMessage.textContent = 'Profile updated successfully!';
+                profileMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+                profileMessage.classList.remove('hidden');
+            } else {
+                const result = await res.json();
+                profileMessage.textContent = result.error || 'Update failed';
+                profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                profileMessage.classList.remove('hidden');
+            }
+        } catch (err) {
+            profileMessage.textContent = 'Network error';
+            profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+            profileMessage.classList.remove('hidden');
+        }
+    });
 
     // Theme Logic
     const html = document.documentElement;
@@ -45,44 +177,49 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // WebSocket Setup
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    let ws;
+    function initWebSocket() {
+        if (ws) return;
+        ws = new WebSocket(`ws://${window.location.host}/ws`);
 
-    ws.onopen = () => {
-        console.log('WebSocket connection established.');
-        updateConnectionStatus(true);
-    };
+        ws.onopen = () => {
+            console.log('WebSocket connection established.');
+            updateConnectionStatus(true);
+        };
 
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        // console.log('Message from server:', data);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            // console.log('Message from server:', data);
 
-        if (data.type === 'newPost') {
-            addMessageToChat(data.post);
-        } else if (data.type === 'history') {
-            messageContainer.innerHTML = ''; // Clear previous messages
-            data.posts.forEach(post => addMessageToChat(post));
-        } else if (data.type === 'error') {
-            alert(data.message);
-        } else if (data.type === 'tags') {
-            allTags = data.tags;
-            renderZoneList(data.tags);
-            // If already viewing a tag, update the header in case its level changed
-            if (currentTag) {
-                const tag = allTags.find(t => t.name === currentTag);
-                if (tag) updateHeaderStyle(tag.hazard_level);
+            if (data.type === 'newPost') {
+                addMessageToChat(data.post);
+            } else if (data.type === 'history') {
+                messageContainer.innerHTML = ''; // Clear previous messages
+                data.posts.forEach(post => addMessageToChat(post));
+            } else if (data.type === 'error') {
+                alert(data.message);
+            } else if (data.type === 'tags') {
+                allTags = data.tags;
+                renderZoneList(data.tags);
+                // If already viewing a tag, update the header in case its level changed
+                if (currentTag) {
+                    const tag = allTags.find(t => t.name === currentTag);
+                    if (tag) updateHeaderStyle(tag.hazard_level);
+                }
             }
-        }
-    };
+        };
 
-    ws.onclose = () => {
-        console.log('WebSocket connection closed.');
-        updateConnectionStatus(false);
-    };
+        ws.onclose = () => {
+            console.log('WebSocket connection closed.');
+            updateConnectionStatus(false);
+            ws = null;
+        };
 
-    ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        updateConnectionStatus(false);
-    };
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            updateConnectionStatus(false);
+        };
+    }
 
     // UI Logic: Navigation
     window.openZone = (tagName) => {
@@ -103,7 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
         viewSettings.classList.remove('translate-x-0');
         viewSettings.classList.add('translate-x-full');
 
-        if (ws.readyState === WebSocket.OPEN) {
+        // Ensure profile is closed
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
     };
@@ -116,12 +257,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide settings out of view
         viewSettings.classList.remove('translate-x-0');
         viewSettings.classList.add('translate-x-full');
+
+        // Slide profile out of view
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
         // Close chat if open
         viewChat.classList.remove('translate-x-0');
         viewChat.classList.add('translate-x-full');
+
+        // Close profile if open
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -132,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     postForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const content = postContent.value.trim();
-        if (content) {
+        if (content && ws) {
             // Assume authentication is handled via cookie or session logic on server for now
             // or we'd send a token. relying on ws.data for now.
             const message = { type: 'post', content: content, tag: currentTag };

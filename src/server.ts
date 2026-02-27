@@ -1,19 +1,44 @@
 import { Database } from "bun:sqlite";
 import { db } from "./db";
 import type { Server } from "bun";
+import { password } from "bun";
 
 const PORT = process.env.PORT || 3010;
+const SESSION_SECRET = process.env.SESSION_SECRET || "super-secret-key-change-me";
 
 // 1. Define the shape of your WebSocket data
 interface WebSocketData {
     createdAt: number;
     subscribeTags: string[];
     server: Server<WebSocketData>;
+    userId: number;
+}
+
+// Helper: Sign a value
+async function signValue(value: string) {
+    const signature = await Bun.password.hash(value + SESSION_SECRET, { algorithm: "bcrypt", cost: 4 });
+    // Simplify signature for cookie (base64 or hex) - bcrypt produces a string we can use directly but it's long.
+    // Let's use HMAC-SHA256 for a standard signature
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(SESSION_SECRET),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
+    return Buffer.from(sig).toString("base64");
+}
+
+// Helper: Verify signature
+async function verifySignature(value: string, signature: string) {
+    const expectedSig = await signValue(value);
+    return expectedSig === signature;
 }
 
 const server = Bun.serve<WebSocketData>({
     port: PORT,
-    fetch(req, server) {
+    async fetch(req, server) {
         const url = new URL(req.url);
 
         // Serve static files
@@ -29,28 +54,196 @@ const server = Bun.serve<WebSocketData>({
             return new Response(Bun.file(filePath));
         }
 
+        // Helper to get cookies
+        const getCookies = (req: Request) => {
+            const cookieHeader = req.headers.get("Cookie");
+            if (!cookieHeader) return {};
+            const cookies: Record<string, string> = {};
+            cookieHeader.split(";").forEach(c => {
+                const [key, ...v] = c.split("=");
+                if (key) cookies[key.trim()] = v.join("=").trim();
+            });
+            return cookies;
+        };
+
         // 2. WebSocket upgrade with data initialization
         if (url.pathname === "/ws") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig) {
+                return new Response("Unauthorized", { status: 401 });
+            }
+
+            if (!(await verifySignature(sessionId, sessionSig))) {
+                return new Response("Invalid Session", { status: 401 });
+            }
+
+            // Verify session in DB
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
+
+            if (!session) {
+                return new Response("Session Expired", { status: 401 });
+            }
+
             const success = server.upgrade(req, {
                 data: {
                     createdAt: Date.now(),
                     subscribeTags: ["#general"],
                     server,
+                    userId: session.user_id,
                 },
             });
             return success ? undefined : new Response("WebSocket upgrade failed", { status: 400 });
         }
 
         // API Endpoints
-        if (url.pathname === "/register" && req.method === "POST") {
-            return new Response("Register endpoint");
+        if (url.pathname === "/api/register" && req.method === "POST") {
+            try {
+                const body = await req.json() as any;
+                const { email, password, full_name, phone_number, physical_address } = body;
+
+                if (!email || !password || !full_name) {
+                    return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+                }
+
+                const hashedPassword = await Bun.password.hash(password);
+
+                const result = db.query(`
+                    INSERT INTO users (email, password_hash, full_name, phone_number, physical_address)
+                    VALUES ($email, $password_hash, $full_name, $phone_number, $physical_address)
+                    RETURNING id
+                `).get({
+                    $email: email,
+                    $password_hash: hashedPassword,
+                    $full_name: full_name,
+                    $phone_number: phone_number || "",
+                    $physical_address: physical_address || ""
+                }) as { id: number };
+
+                // Create Session
+                const sessionId = crypto.randomUUID();
+                const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(); // 10 years
+
+                db.run("INSERT INTO sessions (id, user_id, expires_at) VALUES ($id, $userId, $expiresAt)", {
+                    $id: sessionId,
+                    $userId: result.id,
+                    $expiresAt: expiresAt
+                } as any);
+
+                const sig = await signValue(sessionId);
+
+                const headers = new Headers();
+                headers.append("Set-Cookie", `session_id=${sessionId}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Strict`);
+                headers.append("Set-Cookie", `session_id_sig=${sig}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Strict`);
+                headers.set("Content-Type", "application/json");
+
+                return new Response(JSON.stringify({ success: true, userId: result.id }), {
+                    headers
+                });
+
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        if (url.pathname === "/api/login" && req.method === "POST") {
+            try {
+                const body = await req.json() as any;
+                const { email, password } = body;
+
+                const user = db.query("SELECT * FROM users WHERE email = $email").get({ $email: email }) as any;
+
+                if (!user || !user.password_hash) {
+                    return new Response(JSON.stringify({ error: "Invalid credentials" }), { status: 401 });
+                }
+
+                const isValid = await Bun.password.verify(password, user.password_hash);
+                if (!isValid) {
+                    return new Response(JSON.stringify({ error: "Invalid credentials" }), { status: 401 });
+                }
+
+                // Create Session
+                const sessionId = crypto.randomUUID();
+                const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(); // 10 years
+
+                db.run("INSERT INTO sessions (id, user_id, expires_at) VALUES ($id, $userId, $expiresAt)", {
+                    $id: sessionId,
+                    $userId: user.id,
+                    $expiresAt: expiresAt
+                } as any);
+
+                const sig = await signValue(sessionId);
+
+                const headers = new Headers();
+                headers.append("Set-Cookie", `session_id=${sessionId}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Strict`);
+                headers.append("Set-Cookie", `session_id_sig=${sig}; Path=/; Max-Age=315360000; HttpOnly; SameSite=Strict`);
+                headers.set("Content-Type", "application/json");
+
+                return new Response(JSON.stringify({ success: true }), {
+                    headers
+                });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        if (url.pathname === "/api/me" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            const user = db.query("SELECT id, full_name, email, phone_number, physical_address FROM users WHERE id = $id").get({ $id: session.user_id });
+            return new Response(JSON.stringify(user), { headers: { "Content-Type": "application/json" } });
+        }
+
+        if (url.pathname === "/api/profile" && req.method === "PUT") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            try {
+                const body = await req.json() as any;
+                const { full_name, phone_number, physical_address, email } = body;
+
+                db.run(`
+                    UPDATE users 
+                    SET full_name = $full_name, phone_number = $phone_number, physical_address = $physical_address, email = $email
+                    WHERE id = $id
+                `, {
+                    $full_name: full_name,
+                    $phone_number: phone_number,
+                    $physical_address: physical_address,
+                    $email: email,
+                    $id: session.user_id
+                } as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
         }
 
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
         open(ws) {
-            console.log(`WebSocket opened from: ${ws.remoteAddress}`);
+            console.log(`WebSocket opened from: ${ws.remoteAddress}, UserID: ${ws.data.userId}`);
             // Join the default channel
             ws.subscribe("#general");
             ws.subscribe("system");
@@ -105,7 +298,7 @@ const server = Bun.serve<WebSocketData>({
             }
 
             if (msg.type === "post") {
-                const userId = 1; // Placeholder for now
+                const userId = ws.data.userId;
                 const tagName = msg.tag || "#general";
                 const content = msg.content;
 
