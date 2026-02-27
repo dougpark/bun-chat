@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const postContent = document.getElementById('post-content');
     const activeTagName = document.getElementById('active-tag-name');
     const connectionStatus = document.getElementById('connection-status');
+    const zoneList = document.getElementById('zone-list');
 
     // View Management
     const viewHome = document.getElementById('view-home');
@@ -59,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
             data.posts.forEach(post => addMessageToChat(post));
         } else if (data.type === 'error') {
             alert(data.message);
+        } else if (data.type === 'tags') {
+            renderZoneList(data.tags);
         }
     };
 
@@ -166,5 +169,38 @@ document.addEventListener('DOMContentLoaded', () => {
             connectionStatus.classList.remove('bg-emerald-400', 'animate-pulse');
             connectionStatus.classList.add('bg-red-500');
         }
+    }
+
+    // Helper: Render Zone List
+    function renderZoneList(tags) {
+        if (!zoneList) return;
+        zoneList.innerHTML = '';
+        tags.forEach(tag => {
+            const button = document.createElement('button');
+
+            // Base text color
+            let nameClass = 'font-bold text-indigo-600 dark:text-indigo-400';
+
+            // Apply colors based on hazard level if present
+            if (tag.hazard_level === 'green') {
+                nameClass = 'font-bold text-green-600 dark:text-green-400';
+            } else if (tag.hazard_level === 'red') {
+                nameClass = 'font-bold text-red-600 dark:text-red-400';
+            } else if (tag.hazard_level === 'yellow') {
+                nameClass = 'font-bold text-amber-600 dark:text-amber-400';
+            } else if (tag.hazard_level === 'orange') {
+                nameClass = 'font-bold text-orange-600 dark:text-orange-400';
+            }
+
+            button.className = 'w-full text-left p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors mb-2';
+            button.onclick = () => openZone(tag.name);
+
+            button.innerHTML = `
+                <span class="${nameClass}">${tag.name}</span>
+                <p class="text-xs text-slate-500 dark:text-slate-400">${tag.description || ''}</p>
+            `;
+
+            zoneList.appendChild(button);
+        });
     }
 });

@@ -53,6 +53,15 @@ const server = Bun.serve<WebSocketData>({
             console.log(`WebSocket opened from: ${ws.remoteAddress}`);
             // Join the default channel
             ws.subscribe("#general");
+            ws.subscribe("system");
+
+            // Send initial tags
+            try {
+                const tags = db.query("SELECT * FROM tags ORDER BY name").all();
+                ws.send(JSON.stringify({ type: "tags", tags }));
+            } catch (error) {
+                console.error("Error sending initial tags:", error);
+            }
         },
         async message(ws, message) {
             // console.log(`Received: ${message}`);
@@ -146,3 +155,18 @@ const server = Bun.serve<WebSocketData>({
 });
 
 console.log(`🚀 ECS Server running at http://localhost:${server.port}`);
+
+// Poll for tag changes
+let lastTagsHash = "";
+setInterval(() => {
+    try {
+        const tags = db.query("SELECT * FROM tags ORDER BY name").all();
+        const currentHash = JSON.stringify(tags);
+        if (currentHash !== lastTagsHash) {
+            lastTagsHash = currentHash;
+            server.publish("system", JSON.stringify({ type: "tags", tags }));
+        }
+    } catch (error) {
+        console.error("Error polling tags:", error);
+    }
+}, 2000);
