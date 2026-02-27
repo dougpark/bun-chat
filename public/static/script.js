@@ -13,8 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewHome = document.getElementById('view-home');
     const viewChat = document.getElementById('view-chat');
     const viewSettings = document.getElementById('view-settings');
+    const chatHeader = document.getElementById('chat-header');
+    const hazardBar = document.getElementById('hazard-bar');
 
     let currentTag = '#general';
+    let allTags = [];
 
     // Theme Logic
     const html = document.documentElement;
@@ -61,7 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (data.type === 'error') {
             alert(data.message);
         } else if (data.type === 'tags') {
+            allTags = data.tags;
             renderZoneList(data.tags);
+            // If already viewing a tag, update the header in case its level changed
+            if (currentTag) {
+                const tag = allTags.find(t => t.name === currentTag);
+                if (tag) updateHeaderStyle(tag.hazard_level);
+            }
         }
     };
 
@@ -79,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openZone = (tagName) => {
         currentTag = tagName;
         activeTagName.textContent = tagName;
+
+        const tag = allTags.find(t => t.name === tagName);
+        if (tag) updateHeaderStyle(tag.hazard_level);
 
         // Clear previous messages
         messageContainer.innerHTML = '';
@@ -202,5 +214,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
             zoneList.appendChild(button);
         });
+    }
+
+    // Helper: Update Header Style based on Hazard Level
+    function updateHeaderStyle(level) {
+        if (!chatHeader || !hazardBar) return;
+        level = (level || 'green').toLowerCase();
+
+        // Remove existing colors first
+        const headerColors = [
+            'bg-indigo-700', 'bg-red-700', 'bg-orange-600', 'bg-amber-500', 'bg-emerald-600',
+            'dark:bg-indigo-900', 'dark:bg-red-900', 'dark:bg-orange-800', 'dark:bg-amber-600', 'dark:bg-emerald-800'
+        ];
+        chatHeader.classList.remove(...headerColors);
+
+        let headerBg, headerBgDark, barBg, barBorder, barText;
+
+        if (level === 'red') {
+            headerBg = 'bg-red-700';
+            headerBgDark = 'dark:bg-red-900';
+            barBg = 'bg-white/20';
+            barBorder = 'border-white/30';
+            barText = 'Hazard Level: Danger (Red)';
+        } else if (level === 'orange') {
+            headerBg = 'bg-orange-600';
+            headerBgDark = 'dark:bg-orange-800';
+            barBg = 'bg-white/20';
+            barBorder = 'border-white/30';
+            barText = 'Hazard Level: Warning (Orange)';
+        } else if (level === 'yellow') {
+            headerBg = 'bg-amber-500';
+            headerBgDark = 'dark:bg-amber-600';
+            barBg = 'bg-black/10';
+            barBorder = 'border-black/20';
+            barText = 'Hazard Level: Caution (Yellow)';
+        } else {
+            // Default Green
+            headerBg = 'bg-emerald-600';
+            headerBgDark = 'dark:bg-emerald-800';
+            barBg = 'bg-white/20';
+            barBorder = 'border-white/30';
+            barText = 'Hazard Level: Clear (Green)';
+        }
+
+        chatHeader.classList.add(headerBg, headerBgDark);
+        hazardBar.className = `mt-2 text-xs p-1 rounded text-center border ${barBg} ${barBorder}`;
+        hazardBar.textContent = barText;
     }
 });
