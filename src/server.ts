@@ -12,6 +12,7 @@ interface WebSocketData {
     subscribeTags: string[];
     server: Server<WebSocketData>;
     userId: number;
+    userLevel: number;
 }
 
 // Helper: Sign a value
@@ -81,7 +82,12 @@ const server = Bun.serve<WebSocketData>({
             }
 
             // Verify session in DB
-            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
+            const session = db.query(`
+                SELECT s.user_id, u.level as userLevel 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, userLevel: number } | null;
 
             if (!session) {
                 return new Response("Session Expired", { status: 401 });
@@ -93,6 +99,7 @@ const server = Bun.serve<WebSocketData>({
                     subscribeTags: ["#general"],
                     server,
                     userId: session.user_id,
+                    userLevel: session.userLevel || 0,
                 },
             });
             return success ? undefined : new Response("WebSocket upgrade failed", { status: 400 });
@@ -201,7 +208,7 @@ const server = Bun.serve<WebSocketData>({
             const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
 
-            const user = db.query("SELECT id, full_name, email, phone_number, physical_address FROM users WHERE id = $id").get({ $id: session.user_id });
+            const user = db.query("SELECT id, full_name, email, phone_number, physical_address, level FROM users WHERE id = $id").get({ $id: session.user_id });
             return new Response(JSON.stringify(user), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -239,18 +246,80 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        if (url.pathname === "/api/admin/users" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 3) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            const users = db.query("SELECT id, full_name, email, level FROM users ORDER BY id").all();
+            return new Response(JSON.stringify(users), { headers: { "Content-Type": "application/json" } });
+        }
+
+        if (url.pathname === "/api/admin/update-level" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 3) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                const body = await req.json() as any;
+                const { userId, newLevel } = body;
+
+                db.run("UPDATE users SET level = $level WHERE id = $id", {
+                    $level: newLevel,
+                    $id: userId
+                } as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
         open(ws) {
-            console.log(`WebSocket opened from: ${ws.remoteAddress}, UserID: ${ws.data.userId}`);
+            console.log(`WebSocket opened from: ${ws.remoteAddress}, UserID: ${ws.data.userId}, Level: ${ws.data.userLevel}`);
             // Join the default channel
             ws.subscribe("#general");
-            ws.subscribe("system");
 
-            // Send initial tags
+            // Subscribe to level-based system channels
+            const userLevel = ws.data.userLevel || 0;
+            for (let l = 0; l <= userLevel; l++) {
+                ws.subscribe(`system:${l}`);
+            }
+
+            // Send initial tags (filtered by level)
             try {
-                const tags = db.query("SELECT * FROM tags ORDER BY name").all();
+                const tags = db.query("SELECT * FROM tags WHERE level <= $level ORDER BY name").all({ $level: userLevel } as any);
                 ws.send(JSON.stringify({ type: "tags", tags }));
             } catch (error) {
                 console.error("Error sending initial tags:", error);
@@ -299,8 +368,14 @@ const server = Bun.serve<WebSocketData>({
 
             if (msg.type === "post") {
                 const userId = ws.data.userId;
+                const userLevel = ws.data.userLevel;
                 const tagName = msg.tag || "#general";
                 const content = msg.content;
+
+                if (userLevel === 0) {
+                    ws.send(JSON.stringify({ type: "error", message: "You do not have permission to post (Level 0)." }));
+                    return;
+                }
 
                 // Query Tag
                 const tag = db.query("SELECT id FROM tags WHERE name = $name")
@@ -353,11 +428,18 @@ console.log(`🚀 ECS Server running at http://localhost:${server.port}`);
 let lastTagsHash = "";
 setInterval(() => {
     try {
-        const tags = db.query("SELECT * FROM tags ORDER BY name").all();
-        const currentHash = JSON.stringify(tags);
+        const allTags = db.query("SELECT * FROM tags ORDER BY name").all() as any[];
+        const currentHash = JSON.stringify(allTags);
+
         if (currentHash !== lastTagsHash) {
             lastTagsHash = currentHash;
-            server.publish("system", JSON.stringify({ type: "tags", tags }));
+
+            // Broadcast to each level channel
+            // Levels: 0, 1, 2, 3 (Admin)
+            for (let l = 0; l <= 3; l++) {
+                const filteredTags = allTags.filter(t => (t.level || 0) <= l);
+                server.publish(`system:${l}`, JSON.stringify({ type: "tags", tags: filteredTags }));
+            }
         }
     } catch (error) {
         console.error("Error polling tags:", error);

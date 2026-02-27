@@ -14,9 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewChat = document.getElementById('view-chat');
     const viewSettings = document.getElementById('view-settings');
     const viewProfile = document.getElementById('view-profile');
+    const viewAdmin = document.getElementById('view-admin');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
+    const navAdmin = document.getElementById('nav-admin');
+    const adminUserList = document.getElementById('admin-user-list');
 
     // Auth Elements
     const loginForm = document.getElementById('login-form');
@@ -34,6 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/me');
             if (res.ok) {
                 viewAuth.classList.add('hidden');
+
+                const user = await res.json();
+                if ((user.level || 0) >= 3) {
+                    navAdmin.classList.remove('hidden');
+                } else {
+                    navAdmin.classList.add('hidden');
+                }
+
                 initWebSocket();
             } else {
                 viewAuth.classList.remove('hidden');
@@ -244,6 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewProfile.classList.remove('translate-x-0');
         viewProfile.classList.add('translate-x-full');
 
+        // Ensure admin is closed
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -261,6 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide profile out of view
         viewProfile.classList.remove('translate-x-0');
         viewProfile.classList.add('translate-x-full');
+
+        // Slide admin out of view
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -271,6 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close profile if open
         viewProfile.classList.remove('translate-x-0');
         viewProfile.classList.add('translate-x-full');
+
+        // Close admin if open
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -431,5 +454,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset UI (go home, close settings)
         goHome();
+    };
+
+    // Admin Logic
+    window.openAdmin = async () => {
+        // Close other views
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
+
+        // Open Admin
+        viewAdmin.classList.remove('translate-x-full');
+        viewAdmin.classList.add('translate-x-0');
+
+        // Fetch Users
+        try {
+            const res = await fetch('/api/admin/users');
+            if (res.ok) {
+                const users = await res.json();
+                renderAdminUserList(users);
+            } else {
+                alert('Failed to fetch users');
+            }
+        } catch (e) {
+            console.error('Error fetching users:', e);
+        }
+    };
+
+    function renderAdminUserList(users) {
+        adminUserList.innerHTML = '';
+        users.forEach(user => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+
+            div.innerHTML = `
+                <div>
+                    <p class="font-bold text-slate-800 dark:text-slate-200">${user.full_name}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.email}</p>
+                </div>
+                <select onchange="updateUserLevel(${user.id}, this.value)" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 text-slate-800 dark:text-slate-200 text-sm rounded p-1">
+                    <option value="0" ${user.level === 0 ? 'selected' : ''}>Lvl 0</option>
+                    <option value="1" ${user.level === 1 ? 'selected' : ''}>Lvl 1</option>
+                    <option value="2" ${user.level === 2 ? 'selected' : ''}>Lvl 2</option>
+                    <option value="3" ${user.level === 3 ? 'selected' : ''}>Lvl 3</option>
+                </select>
+            `;
+            adminUserList.appendChild(div);
+        });
+    }
+
+    window.updateUserLevel = async (userId, newLevel) => {
+        try {
+            const res = await fetch('/api/admin/update-level', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, newLevel: parseInt(newLevel) })
+            });
+
+            if (!res.ok) {
+                alert('Failed to update level');
+            }
+        } catch (e) {
+            console.error('Error updating level:', e);
+        }
     };
 });
