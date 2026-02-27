@@ -91,7 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'bg-white p-3 rounded-lg shadow-sm border border-slate-200 self-start max-w-[85%] animate-fade-in-up';
 
-        const timeString = new Date(post.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // Ensure timestamp is treated as UTC if it's a bare SQLite timestamp string
+        let timestamp = post.timestamp;
+        if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+            timestamp = timestamp.replace(' ', 'T') + 'Z';
+        }
+        const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         messageDiv.innerHTML = `
             <p class="text-xs font-bold text-indigo-600 mb-1">${post.userName}</p>
