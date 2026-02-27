@@ -410,4 +410,23 @@ document.addEventListener('DOMContentLoaded', () => {
         hazardBar.className = `mt-2 text-xs p-1 rounded text-center border ${barBg} ${barBorder}`;
         hazardBar.textContent = barText;
     }
+
+    // Logout Logic
+    window.logout = () => {
+        // Clear cookies
+        document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'session_id_sig=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+        // Close WebSocket
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+
+        // Show Auth View
+        viewAuth.classList.remove('hidden');
+
+        // Reset UI (go home, close settings)
+        goHome();
+    };
 });
