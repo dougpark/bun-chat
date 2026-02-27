@@ -51,8 +51,11 @@ db.run(`
 `);
 
 // Seed initial data (for demonstration)
-db.run(`INSERT OR IGNORE INTO tags (name, description,hazard_level, weather, person_in_charge) VALUES ('#general','General discussion', 'green', 'Sunny', 'Admin');`);
-db.run(`INSERT OR IGNORE INTO tags (name,description, hazard_level, weather, person_in_charge) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Rain', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#general','General discussion', 'green', 'Normal', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Normal', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#security', 'Security concerns', 'red', 'Normal', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#hazard', 'Hazardconcerns', 'orange', 'Normal', 'Admin');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge) VALUES ('#damage', 'Damage concerns', 'green', 'Normal', 'Admin');`);
 db.run(`INSERT OR IGNORE INTO users (id, full_name, phone_number, physical_address, is_verified, role) VALUES (1, 'Test User', '555-123-4567', '123 Main St', TRUE, 'user');`);
 
 export { db };
