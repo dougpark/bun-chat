@@ -304,12 +304,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
             timestamp = timestamp.replace(' ', 'T') + 'Z';
         }
-        const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateObj = new Date(timestamp);
+        const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateString = dateObj.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
 
         messageDiv.innerHTML = `
             <p class="text-xs font-bold text-orange-600 dark:text-orange-400 mb-1">${post.userName}</p>
             <p class="text-slate-800 dark:text-slate-200">${post.content}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${timeString}</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${dateString} ${timeString}</p>
         `;
 
         messageContainer.appendChild(messageDiv);
