@@ -265,7 +265,7 @@ const server = Bun.serve<WebSocketData>({
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
             if ((session.level || 0) < 3) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
-            const users = db.query("SELECT id, full_name, email, level FROM users ORDER BY id").all();
+            const users = db.query("SELECT id, full_name, email, level, phone_number, physical_address FROM users ORDER BY id").all();
             return new Response(JSON.stringify(users), { headers: { "Content-Type": "application/json" } });
         }
 

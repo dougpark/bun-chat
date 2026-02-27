@@ -82,8 +82,8 @@ db.run(`
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#general','General discussion', 'green', 'Normal', 'Admin', 0);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Normal', 'Admin', 0);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#security', 'Security concerns', 'red', 'Normal', 'Admin', 1);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#hazard', 'Hazard concerns', 'orange', 'Normal', 'Admin', 1);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#damage', 'Damage concerns', 'green', 'Normal', 'Admin', 1);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#Zone Admin', 'Zone discussion', 'green', 'Normal', 'Admin', 2);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#Sys Admin', 'System discussion', 'green', 'Normal', 'Admin', 3);`);
 db.run(`INSERT OR IGNORE INTO users (id, full_name, phone_number, physical_address, is_verified, role, level) VALUES (1, 'Test User', '555-123-4567', '123 Main St', TRUE, 'user', 3);`);
 
 export { db };

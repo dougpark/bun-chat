@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hazardBar = document.getElementById('hazard-bar');
     const navAdmin = document.getElementById('nav-admin');
     const adminUserList = document.getElementById('admin-user-list');
+    const adminUserFilter = document.getElementById('admin-user-filter');
 
     // Auth Elements
     const loginForm = document.getElementById('login-form');
@@ -125,6 +126,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 form.elements['email'].value = user.email || '';
                 form.elements['phone_number'].value = user.phone_number || '';
                 form.elements['physical_address'].value = user.physical_address || '';
+
+                // Update Level Display
+                const levelDisplay = document.getElementById('profile-level-display');
+                if (levelDisplay) {
+                    const levels = {
+                        0: 'Unverified',
+                        1: 'Verified',
+                        2: 'Zone Admin',
+                        3: 'System Admin'
+                    };
+                    const level = user.level || 0;
+                    levelDisplay.textContent = `${level} - ${levels[level] || 'Unknown'}`;
+                }
             }
         } catch (e) {
             console.error('Failed to fetch profile', e);
@@ -456,6 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
         goHome();
     };
 
+    let allUsers = [];
+
     // Admin Logic
     window.openAdmin = async () => {
         // Close other views
@@ -475,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/admin/users');
             if (res.ok) {
                 const users = await res.json();
+                allUsers = users; // Store for filtering
                 renderAdminUserList(users);
             } else {
                 alert('Failed to fetch users');
@@ -483,6 +500,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching users:', e);
         }
     };
+
+    // Filter Logic
+    if (adminUserFilter) {
+        adminUserFilter.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(u => u.full_name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term));
+            renderAdminUserList(filtered);
+        });
+    }
 
     function renderAdminUserList(users) {
         adminUserList.innerHTML = '';
@@ -494,12 +520,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <p class="font-bold text-slate-800 dark:text-slate-200">${user.full_name}</p>
                     <p class="text-xs text-slate-500 dark:text-slate-400">${user.email}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.phone_number}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.physical_address}</p>
                 </div>
                 <select onchange="updateUserLevel(${user.id}, this.value)" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 text-slate-800 dark:text-slate-200 text-sm rounded p-1">
-                    <option value="0" ${user.level === 0 ? 'selected' : ''}>Lvl 0</option>
-                    <option value="1" ${user.level === 1 ? 'selected' : ''}>Lvl 1</option>
-                    <option value="2" ${user.level === 2 ? 'selected' : ''}>Lvl 2</option>
-                    <option value="3" ${user.level === 3 ? 'selected' : ''}>Lvl 3</option>
+                    <option value="0" ${user.level === 0 ? 'selected' : ''}>0 Unverified</option>
+                    <option value="1" ${user.level === 1 ? 'selected' : ''}>1 Verified</option>
+                    <option value="2" ${user.level === 2 ? 'selected' : ''}>2 Zone Admin</option>
+                    <option value="3" ${user.level === 3 ? 'selected' : ''}>3 System Admin</option>
                 </select>
             `;
             adminUserList.appendChild(div);
