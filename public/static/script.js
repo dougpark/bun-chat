@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         messageDiv.innerHTML = `
-            <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">${post.userName}</p>
+            <p class="text-xs font-bold text-orange-600 dark:text-orange-400 mb-1">${post.userName}</p>
             <p class="text-slate-800 dark:text-slate-200">${post.content}</p>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${timeString}</p>
         `;
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const button = document.createElement('button');
 
             // Base text color
-            let nameClass = 'font-bold text-indigo-600 dark:text-indigo-400';
+            let nameClass = 'font-bold text-orange-600 dark:text-orange-400';
 
             // Apply colors based on hazard level if present
             if (tag.hazard_level === 'green') {
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameClass = 'font-bold text-orange-600 dark:text-orange-400';
             }
 
-            button.className = 'w-full text-left p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors mb-2';
+            button.className = 'w-full text-left p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors mb-2';
             button.onclick = () => openZone(tag.name);
 
             button.innerHTML = `
@@ -372,8 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Remove existing colors first
         const headerColors = [
-            'bg-indigo-700', 'bg-red-700', 'bg-orange-600', 'bg-amber-500', 'bg-emerald-600',
-            'dark:bg-indigo-900', 'dark:bg-red-900', 'dark:bg-orange-800', 'dark:bg-amber-600', 'dark:bg-emerald-800'
+            'bg-green-700', 'dark:bg-green-800',
+            'bg-indigo-700', 'bg-red-700', 'bg-orange-600', 'bg-amber-500', 'bg-emerald-600', 'bg-slate-700',
+            'dark:bg-indigo-900', 'dark:bg-red-900', 'dark:bg-orange-800', 'dark:bg-amber-600', 'dark:bg-emerald-800', 'dark:bg-slate-800'
         ];
         chatHeader.classList.remove(...headerColors);
 
@@ -399,10 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
             barText = 'Hazard Level: Caution (Yellow)';
         } else {
             // Default Green
-            headerBg = 'bg-emerald-600';
-            headerBgDark = 'dark:bg-emerald-800';
-            barBg = 'bg-white/20';
-            barBorder = 'border-white/30';
+            headerBg = 'bg-green-700';
+            headerBgDark = 'dark:bg-green-800';
+            barBg = 'bg-emerald-500/20';
+            barBorder = 'border-emerald-500/30';
             barText = 'Hazard Level: Clear (Green)';
         }
 
