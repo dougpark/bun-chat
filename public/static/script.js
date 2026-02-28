@@ -16,12 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewProfile = document.getElementById('view-profile');
     const viewAdmin = document.getElementById('view-admin');
     const viewAdminNav = document.getElementById('view-admin-nav');
+    const viewAdminZones = document.getElementById('view-admin-zones');
+    const viewZoneEdit = document.getElementById('view-zone-edit');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
     const navAdmin = document.getElementById('nav-admin');
     const adminUserList = document.getElementById('admin-user-list');
     const adminUserFilter = document.getElementById('admin-user-filter');
+    const adminZoneList = document.getElementById('admin-zone-list');
+    const adminZoneFilter = document.getElementById('admin-zone-filter');
+    const zoneEditForm = document.getElementById('zone-edit-form');
 
     // Auth Elements
     const loginForm = document.getElementById('login-form');
@@ -34,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTags = [];
     // let allUsers = [];
     let currentUserLevel = 0;
+    let allZones = [];
+    let currentEditingZoneId = null;
 
     // Auth Logic
     async function checkAuth() {
@@ -124,6 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close admin nav if open
         viewAdminNav.classList.remove('translate-x-0');
         viewAdminNav.classList.add('translate-x-full');
+
+        // Close zone admin if open
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        // Close zone edit if open
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -290,6 +305,14 @@ document.addEventListener('DOMContentLoaded', () => {
         viewAdminNav.classList.remove('translate-x-0');
         viewAdminNav.classList.add('translate-x-full');
 
+        // Ensure zone admin is closed
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        // Ensure zone edit is closed
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -315,6 +338,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide admin nav out of view
         viewAdminNav.classList.remove('translate-x-0');
         viewAdminNav.classList.add('translate-x-full');
+
+        // Slide zone admin out of view
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        // Slide zone edit out of view
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -333,6 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close admin nav if open
         viewAdminNav.classList.remove('translate-x-0');
         viewAdminNav.classList.add('translate-x-full');
+
+        // Close zone admin if open
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        // Close zone edit if open
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -511,6 +550,14 @@ document.addEventListener('DOMContentLoaded', () => {
         viewAdmin.classList.remove('translate-x-0');
         viewAdmin.classList.add('translate-x-full');
 
+        // Close zone admin if open
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        // Close zone edit if open
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+
         // Open Admin Nav
         viewAdminNav.classList.remove('translate-x-full');
         viewAdminNav.classList.add('translate-x-0');
@@ -526,6 +573,10 @@ document.addEventListener('DOMContentLoaded', () => {
             viewAdmin.classList.remove('translate-x-full');
             viewAdmin.classList.add('translate-x-0');
 
+            // Close zone admin if open
+            viewAdminZones.classList.remove('translate-x-0');
+            viewAdminZones.classList.add('translate-x-full');
+
             // Fetch Users
             try {
                 const res = await fetch('/api/admin/users');
@@ -540,8 +591,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching users:', e);
             }
         } else if (section === 'zones') {
-            // TODO: Implement zone admin section
-            alert('Zone Admin coming soon');
+            // Close Admin Nav
+            viewAdminNav.classList.remove('translate-x-0');
+            viewAdminNav.classList.add('translate-x-full');
+
+            // Close Admin
+            viewAdmin.classList.remove('translate-x-0');
+            viewAdmin.classList.add('translate-x-full');
+
+            // Open Zone Admin
+            viewAdminZones.classList.remove('translate-x-full');
+            viewAdminZones.classList.add('translate-x-0');
+
+            // Fetch Zones
+            try {
+                const res = await fetch('/api/admin/tags');
+                if (res.ok) {
+                    const zones = await res.json();
+                    allZones = zones;
+                    renderAdminZoneList(zones);
+                } else {
+                    alert('Failed to fetch zones');
+                }
+            } catch (e) {
+                console.error('Error fetching zones:', e);
+            }
         }
     };
 
@@ -593,4 +667,128 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error updating level:', e);
         }
     };
+
+    // Zone Admin Filter Logic
+    if (adminZoneFilter) {
+        adminZoneFilter.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allZones.filter(z => z.name.toLowerCase().includes(term) || (z.description && z.description.toLowerCase().includes(term)));
+            renderAdminZoneList(filtered);
+        });
+    }
+
+    function renderAdminZoneList(zones) {
+        adminZoneList.innerHTML = '';
+        zones.forEach(zone => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600';
+
+            let hazardClass = 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+            if (zone.hazard_level === 'yellow') {
+                hazardClass = 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200';
+            } else if (zone.hazard_level === 'orange') {
+                hazardClass = 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200';
+            } else if (zone.hazard_level === 'red') {
+                hazardClass = 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+            }
+
+            div.innerHTML = `
+                <div class="flex-1">
+                    <p class="font-bold text-slate-800 dark:text-slate-200">${zone.name}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${zone.description || 'No description'}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 rounded text-xs font-semibold ${hazardClass}">${zone.hazard_level || 'green'}</span>
+                    <button onclick="openZoneEdit(${zone.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
+                </div>
+            `;
+            adminZoneList.appendChild(div);
+        });
+    }
+
+    window.openZoneEdit = async (zoneId) => {
+        currentEditingZoneId = zoneId;
+        const zone = allZones.find(z => z.id === zoneId);
+
+        if (!zone) {
+            alert('Zone not found');
+            return;
+        }
+
+        // Populate form
+        document.getElementById('zone-name-input').value = zone.name;
+        document.getElementById('zone-description-input').value = zone.description || '';
+        document.getElementById('zone-hazard-level-input').value = zone.hazard_level || 'green';
+        document.getElementById('zone-level-input').value = zone.level || '0';
+        document.getElementById('zone-weather-input').value = zone.weather || '';
+        document.getElementById('zone-person-in-charge-input').value = zone.person_in_charge || '';
+
+        // Close zone list, open edit view
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+
+        viewZoneEdit.classList.remove('translate-x-full');
+        viewZoneEdit.classList.add('translate-x-0');
+    };
+
+    window.closeZoneEdit = () => {
+        // Close edit view, open zone list
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+
+        viewAdminZones.classList.remove('translate-x-full');
+        viewAdminZones.classList.add('translate-x-0');
+    };
+
+    if (zoneEditForm) {
+        zoneEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const zoneEditMessage = document.getElementById('zone-edit-message');
+            zoneEditMessage.classList.add('hidden');
+
+            if (!currentEditingZoneId) {
+                alert('No zone selected');
+                return;
+            }
+
+            const data = {
+                name: document.getElementById('zone-name-input').value,
+                description: document.getElementById('zone-description-input').value,
+                hazard_level: document.getElementById('zone-hazard-level-input').value,
+                level: parseInt(document.getElementById('zone-level-input').value),
+                weather: document.getElementById('zone-weather-input').value,
+                person_in_charge: document.getElementById('zone-person-in-charge-input').value
+            };
+
+            try {
+                const res = await fetch(`/api/admin/tags/${currentEditingZoneId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    zoneEditMessage.textContent = 'Zone updated successfully!';
+                    zoneEditMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+                    zoneEditMessage.classList.remove('hidden');
+
+                    // Refresh zone list
+                    setTimeout(() => {
+                        closeZoneEdit();
+                        openAdminSection('zones');
+                    }, 1500);
+                } else {
+                    const result = await res.json();
+                    zoneEditMessage.textContent = result.error || 'Update failed';
+                    zoneEditMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                    zoneEditMessage.classList.remove('hidden');
+                }
+            } catch (err) {
+                zoneEditMessage.textContent = 'Network error';
+                zoneEditMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                zoneEditMessage.classList.remove('hidden');
+            }
+        });
+    }
 });

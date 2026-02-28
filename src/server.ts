@@ -362,6 +362,48 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Handle PUT /api/admin/tags/:id
+        const tagsMatch = url.pathname.match(/^\/api\/admin\/tags\/(\d+)$/);
+        if (tagsMatch && req.method === "PUT") {
+            const tagId = parseInt(tagsMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                const body = await req.json() as any;
+                const { name, description, hazard_level, level, weather, person_in_charge } = body;
+
+                db.run("UPDATE tags SET name = $name, description = $description, hazard_level = $hazard_level, level = $level, weather = $weather, person_in_charge = $person_in_charge WHERE id = $id", {
+                    $name: name,
+                    $description: description,
+                    $hazard_level: hazard_level,
+                    $level: level,
+                    $weather: weather,
+                    $person_in_charge: person_in_charge,
+                    $id: tagId
+                } as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
