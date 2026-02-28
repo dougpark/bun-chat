@@ -297,16 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // console.log('Message from server:', data);
 
             if (data.type === 'newPost') {
-                // If this post is for a tag that's not currently active, increment unread count
-                if (data.post.tagName !== currentTag) {
-                    const tagIndex = allTags.findIndex(t => t.name === data.post.tagName);
-                    if (tagIndex >= 0) {
-                        allTags[tagIndex].unread_count = (allTags[tagIndex].unread_count || 0) + 1;
-                        renderZoneList(allTags);
-                    }
-                } else {
-                    // If it's for the current tag, just add to chat
+                // If it's for the current tag, add to chat
+                if (data.post.tagName === currentTag) {
                     addMessageToChat(data.post);
+                }
+                // Refresh all tag unread counts
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'requestTags' }));
+                }
+            } else if (data.type === 'postUpdate') {
+                // New post arrived somewhere, refresh all unread counts for current user
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'requestTags' }));
                 }
             } else if (data.type === 'history') {
                 messageContainer.innerHTML = ''; // Clear previous messages
@@ -354,13 +356,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ws && ws.readyState === WebSocket.OPEN) {
             // First, send openTag to mark as viewed
             ws.send(JSON.stringify({ type: 'openTag', tag: tagName }));
+            // Request fresh tags to update unread counts for all zones
+            ws.send(JSON.stringify({ type: 'requestTags' }));
             // Then subscribe to receive new messages
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
     };
 
     window.goHome = () => {
-        navigateTo('home');
+        navigateTo('home', {
+            onNavigate: () => {
+                // Request fresh tags with current unread counts when navigating home
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'requestTags' }));
+                }
+            }
+        });
     };
 
     window.openSettings = () => {
@@ -649,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderZoneList(tags) {
         if (!zoneList) return;
         zoneList.innerHTML = '';
+        
         tags.forEach(tag => {
             const button = document.createElement('button');
 

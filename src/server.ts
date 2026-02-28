@@ -566,10 +566,27 @@ const server = Bun.serve<WebSocketData>({
             for (let l = 0; l <= userLevel; l++) {
                 ws.subscribe(`system:${l}`);
             }
+            
+            // Subscribe to post updates channel to refresh tags when new posts arrive
+            ws.subscribe("postUpdate");
 
             // Send initial tags (filtered by level) with unread counts
             try {
                 const userId = ws.data.userId || 1;
+                
+                // Initialize user_tag_presence for any tags not yet visited by this user
+                // Set last_viewed_at to the latest post timestamp in each tag, so unread count starts at 0
+                db.run(`
+                    INSERT OR IGNORE INTO user_tag_presence (user_id, tag_id, last_viewed_at)
+                    SELECT ?, t.id, COALESCE((
+                        SELECT MAX(p.timestamp) 
+                        FROM posts p 
+                        WHERE p.tag_id = t.id
+                    ), CURRENT_TIMESTAMP)
+                    FROM tags t
+                    WHERE t.level <= ?
+                `, userId, userLevel);
+                
                 const tags = db.query(`
                     SELECT 
                         t.*,
@@ -577,16 +594,16 @@ const server = Bun.serve<WebSocketData>({
                             SELECT COUNT(*) 
                             FROM posts p 
                             WHERE p.tag_id = t.id 
-                            AND p.timestamp > COALESCE((
+                            AND DATETIME(p.timestamp) > DATETIME(COALESCE((
                                 SELECT last_viewed_at 
                                 FROM user_tag_presence 
-                                WHERE user_id = $userId AND tag_id = t.id
-                            ), '1970-01-01')
+                                WHERE user_id = ? AND tag_id = t.id
+                            ), '1970-01-01 00:00:00'))
                         ), 0) as unread_count
                     FROM tags t
-                    WHERE t.level <= $level
+                    WHERE t.level <= ?
                     ORDER BY t.name
-                `).all({ $level: userLevel, $userId: userId } as any);
+                `).all(userId, userLevel) as any;
                 ws.send(JSON.stringify({ type: "tags", tags }));
             } catch (error) {
                 console.error("Error sending initial tags:", error);
@@ -654,6 +671,48 @@ const server = Bun.serve<WebSocketData>({
                 });
             }
 
+            if (msg.type === "requestTags") {
+                // Send fresh tags with current unread counts
+                try {
+                    const userId = ws.data.userId;
+                    const userLevel = ws.data.userLevel || 0;
+                    
+                    // Initialize user_tag_presence for any tags not yet visited by this user
+                    // Set last_viewed_at to the latest post timestamp in each tag, so unread count starts at 0
+                    db.run(`
+                        INSERT OR IGNORE INTO user_tag_presence (user_id, tag_id, last_viewed_at)
+                        SELECT ?, t.id, COALESCE((
+                            SELECT MAX(p.timestamp) 
+                            FROM posts p 
+                            WHERE p.tag_id = t.id
+                        ), CURRENT_TIMESTAMP)
+                        FROM tags t
+                        WHERE t.level <= ?
+                    `, userId, userLevel);
+                    
+                    const tags = db.query(`
+                        SELECT 
+                            t.*,
+                            COALESCE((
+                                SELECT COUNT(*) 
+                                FROM posts p 
+                                WHERE p.tag_id = t.id 
+                                AND DATETIME(p.timestamp) > DATETIME(COALESCE((
+                                    SELECT last_viewed_at 
+                                    FROM user_tag_presence 
+                                    WHERE user_id = ? AND tag_id = t.id
+                                ), '1970-01-01 00:00:00'))
+                            ), 0) as unread_count
+                        FROM tags t
+                        WHERE t.level <= ?
+                        ORDER BY t.name
+                    `).all(userId, userLevel) as any;
+                    ws.send(JSON.stringify({ type: "tags", tags }));
+                } catch (error) {
+                    console.error("Error sending tags:", error);
+                }
+            }
+
             if (msg.type === "post") {
                 const userId = ws.data.userId;
                 const userLevel = ws.data.userLevel;
@@ -702,6 +761,13 @@ const server = Bun.serve<WebSocketData>({
                     type: "newPost",
                     post: newPost
                 }));
+                
+                // 4. Notify all connected clients that a new post arrived (even those not subscribed to this tag)
+                // This allows them to refresh their unread counts
+                ws.data.server.publish("postUpdate", JSON.stringify({
+                    type: "postUpdate",
+                    tag: tagName
+                }));
             }
         },
         close(ws, code, message) {
@@ -714,40 +780,42 @@ console.log(`🚀 ECS Server running at http://localhost:${server.port}`);
 
 // Poll for tag changes and include unread counts
 let lastTagsHash = "";
-setInterval(() => {
-    try {
-        // Get all tags with unread counts for the current user (this will be filtered per-connection later)
-        // We calculate unread for a hypothetical userId here; the actual filtering happens per-subscriber
-        const allTags = db.query(`
-            SELECT 
-                t.*,
-                COALESCE((
-                    SELECT COUNT(*) 
-                    FROM posts p 
-                    WHERE p.tag_id = t.id 
-                    AND p.timestamp > COALESCE((
-                        SELECT last_viewed_at 
-                        FROM user_tag_presence 
-                        WHERE user_id = 1 AND tag_id = t.id
-                    ), '1970-01-01')
-                ), 0) as unread_count
-            FROM tags t
-            ORDER BY name
-        `).all() as any[];
-        
-        const currentHash = JSON.stringify(allTags);
-
-        if (currentHash !== lastTagsHash) {
-            lastTagsHash = currentHash;
-
-            // Broadcast to each level channel
-            // Levels: 0, 1, 2, 3 (Admin)
-            for (let l = 0; l <= 3; l++) {
-                const filteredTags = allTags.filter(t => (t.level || 0) <= l);
-                server.publish(`system:${l}`, JSON.stringify({ type: "tags", tags: filteredTags }));
-            }
-        }
-    } catch (error) {
-        console.error("Error polling tags:", error);
-    }
-}, 2000);
+// Polling disabled - clients request tags via requestTags message when needed
+// This prevents incorrect unread counts (calculated for user_id = 1) from being broadcast to all users
+// setInterval(() => {
+//     try {
+//         // Get all tags with unread counts for the current user (this will be filtered per-connection later)
+//         // We calculate unread for a hypothetical userId here; the actual filtering happens per-subscriber
+//         const allTags = db.query(`
+//             SELECT 
+//                 t.*,
+//                 COALESCE((
+//                     SELECT COUNT(*) 
+//                     FROM posts p 
+//                     WHERE p.tag_id = t.id 
+//                     AND DATETIME(p.timestamp) > DATETIME(COALESCE((
+//                         SELECT last_viewed_at 
+//                         FROM user_tag_presence 
+//                         WHERE user_id = 1 AND tag_id = t.id
+//                     ), '1970-01-01 00:00:00'))
+//                 ), 0) as unread_count
+//             FROM tags t
+//             ORDER BY name
+//         `).all() as any[];
+//         
+//         const currentHash = JSON.stringify(allTags);
+//
+//         if (currentHash !== lastTagsHash) {
+//             lastTagsHash = currentHash;
+//
+//             // Broadcast to each level channel
+//             // Levels: 0, 1, 2, 3 (Admin)
+//             for (let l = 0; l <= 3; l++) {
+//                 const filteredTags = allTags.filter(t => (t.level || 0) <= l);
+//                 server.publish(`system:${l}`, JSON.stringify({ type: "tags", tags: filteredTags }));
+//             }
+//         }
+//     } catch (error) {
+//         console.error("Error polling tags:", error);
+//     }
+// }, 2000);
