@@ -78,6 +78,20 @@ db.run(`
   );
 `);
 
+// checkins table to track user check-ins with location and status
+db.run(`
+  CREATE TABLE IF NOT EXISTS checkins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    status_id INTEGER, -- '0=ok' or '1=help'
+    status TEXT, -- additional info for help status
+    lat REAL,
+    lng REAL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#general','General discussion', 'green', 'Normal', 'Admin', 0);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Normal', 'Admin', 0);`);

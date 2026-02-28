@@ -212,6 +212,29 @@ const server = Bun.serve<WebSocketData>({
             return new Response(JSON.stringify(user), { headers: { "Content-Type": "application/json" } });
         }
 
+        if (url.pathname === "/api/members" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            const members = db.query("SELECT full_name, level, physical_address, email, phone_number FROM users ORDER BY full_name").all();
+            return new Response(JSON.stringify(members), { headers: { "Content-Type": "application/json" } });
+        }
+
         if (url.pathname === "/api/profile" && req.method === "PUT") {
             const cookies = getCookies(req);
             const sessionId = cookies["session_id"];

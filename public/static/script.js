@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewAdminZones = document.getElementById('view-admin-zones');
     const viewZoneEdit = document.getElementById('view-zone-edit');
     const viewUserEdit = document.getElementById('view-user-edit');
+    const viewMembers = document.getElementById('view-members');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
@@ -27,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminUserFilter = document.getElementById('admin-user-filter');
     const adminZoneList = document.getElementById('admin-zone-list');
     const adminZoneFilter = document.getElementById('admin-zone-filter');
+    const membersList = document.getElementById('members-list');
+    const membersFilter = document.getElementById('members-filter');
     const zoneEditForm = document.getElementById('zone-edit-form');
     const userEditForm = document.getElementById('user-edit-form');
 
@@ -45,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingZoneId = null;
     let allUsers = [];
     let currentEditingUserId = null;
+    let allMembers = [];
 
     // Auth Logic
     async function checkAuth() {
@@ -147,6 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close user edit if open
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
+
+        // Close members if open
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -325,6 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
 
+        // Ensure members is closed
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -362,6 +374,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide user edit out of view
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
+
+        // Slide members out of view
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -393,10 +409,90 @@ document.addEventListener('DOMContentLoaded', () => {
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
 
+        // Close members if open
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
+
         // Open settings
         viewSettings.classList.remove('translate-x-full');
         viewSettings.classList.add('translate-x-0');
     };
+
+    window.openMembers = async () => {
+        // Close other views
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
+
+        // Open members
+        viewMembers.classList.remove('translate-x-full');
+        viewMembers.classList.add('translate-x-0');
+
+        // Load members
+        await loadMembers();
+    };
+
+    async function loadMembers() {
+        try {
+            const res = await fetch('/api/members');
+            if (res.ok) {
+                const members = await res.json();
+                allMembers = members;
+                renderMembersList(members);
+            } else {
+                alert('Failed to fetch members');
+            }
+        } catch (e) {
+            console.error('Error fetching members:', e);
+        }
+    }
+
+    function renderMembersList(members) {
+        membersList.innerHTML = '';
+        members.forEach(member => {
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+
+            const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
+            const memberLevel = levelNames[member.level] || `${member.level} Unknown`;
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <p class="font-bold text-slate-800 dark:text-slate-200">${member.full_name}</p>
+                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200">${memberLevel}</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">${member.email}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">${member.phone_number || 'N/A'}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${member.physical_address || 'N/A'}</p>
+            `;
+            membersList.appendChild(div);
+        });
+    }
+
+    // Members filter functionality
+    if (membersFilter) {
+        membersFilter.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allMembers.filter(m => 
+                m.full_name.toLowerCase().includes(term) || 
+                m.email.toLowerCase().includes(term)
+            );
+            renderMembersList(filtered);
+        });
+    }
 
     // UI Logic: Forms
     postForm.addEventListener('submit', (e) => {
@@ -581,6 +677,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close user edit if open
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
+
+        // Close members if open
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
 
         // Open Admin Nav
         viewAdminNav.classList.remove('translate-x-full');

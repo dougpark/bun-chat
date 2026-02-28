@@ -447,6 +447,24 @@
             </main>
         </div>
 
+        <!-- View 10: Members (Initially off-screen) -->
+        <div id="view-members"
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+                <h1 class="text-xl font-bold">Members</h1>
+            </header>
+            <main class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div
+                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    <input type="text" id="members-filter" placeholder="Filter by name or email..."
+                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                    <div id="members-list" class="space-y-3">
+                        <!-- Members items injected here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+
         <!-- Bottom Nav (Persistent) -->
         <nav
             class="absolute bottom-0 left-0 right-0 z-30 flex justify-around bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16">
@@ -464,8 +482,16 @@
                 </svg>
                 <span class="text-[10px] font-bold">Alerts</span>
             </button>
+            <button onclick="openMembers()"
+                class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span class="text-[10px] font-bold">Members</span>
+            </button>
 
-            <button onclick="openSettings()"
+            <button
                 class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
