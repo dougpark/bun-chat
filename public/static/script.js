@@ -65,8 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function navigateTo(viewName, options = {}) {
-        // Close current view
+        // If leaving chat view, mark current tag as fully read
         const current = navigationStack[navigationStack.length - 1];
+        if (current === 'chat' && viewName !== 'chat' && currentTag) {
+            // Update last_viewed_at for the tag we're leaving
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
+            }
+        }
+        
+        // Close current view
         if (current && views[current]) {
             views[current].el.classList.add('translate-x-full');
             views[current].el.classList.remove('translate-x-0');
@@ -88,6 +96,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function goBack() {
         if (navigationStack.length > 1) {
+            // If leaving chat view, mark current tag as fully read
+            const current = navigationStack[navigationStack.length - 1];
+            if (current === 'chat' && currentTag) {
+                // Update last_viewed_at for the tag we're leaving
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
+                }
+            }
+            
             navigationStack.pop();
             const previous = navigationStack[navigationStack.length - 1];
             
@@ -683,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Build unread badge if there are unread messages
             const unreadBadge = (tag.unread_count || 0) > 0 
-                ? `<span class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">${tag.unread_count}</span>`
+                ? `<span class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ">${tag.unread_count}</span>`
                 : '';
 
             button.innerHTML = `
