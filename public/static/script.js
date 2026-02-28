@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewAdminNav = document.getElementById('view-admin-nav');
     const viewAdminZones = document.getElementById('view-admin-zones');
     const viewZoneEdit = document.getElementById('view-zone-edit');
+    const viewUserEdit = document.getElementById('view-user-edit');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminZoneList = document.getElementById('admin-zone-list');
     const adminZoneFilter = document.getElementById('admin-zone-filter');
     const zoneEditForm = document.getElementById('zone-edit-form');
+    const userEditForm = document.getElementById('user-edit-form');
 
     // Auth Elements
     const loginForm = document.getElementById('login-form');
@@ -41,6 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserLevel = 0;
     let allZones = [];
     let currentEditingZoneId = null;
+    let allUsers = [];
+    let currentEditingUserId = null;
 
     // Auth Logic
     async function checkAuth() {
@@ -139,6 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close zone edit if open
         viewZoneEdit.classList.remove('translate-x-0');
         viewZoneEdit.classList.add('translate-x-full');
+
+        // Close user edit if open
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -313,6 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewZoneEdit.classList.remove('translate-x-0');
         viewZoneEdit.classList.add('translate-x-full');
 
+        // Ensure user edit is closed
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -346,6 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide zone edit out of view
         viewZoneEdit.classList.remove('translate-x-0');
         viewZoneEdit.classList.add('translate-x-full');
+
+        // Slide user edit out of view
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -372,6 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close zone edit if open
         viewZoneEdit.classList.remove('translate-x-0');
         viewZoneEdit.classList.add('translate-x-full');
+
+        // Close user edit if open
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -534,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goHome();
     };
 
-    let allUsers = [];
+
 
     // Admin Logic
     window.openAdmin = () => {
@@ -557,6 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close zone edit if open
         viewZoneEdit.classList.remove('translate-x-0');
         viewZoneEdit.classList.add('translate-x-full');
+
+        // Close user edit if open
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
 
         // Open Admin Nav
         viewAdminNav.classList.remove('translate-x-full');
@@ -632,21 +656,21 @@ document.addEventListener('DOMContentLoaded', () => {
         adminUserList.innerHTML = '';
         users.forEach(user => {
             const div = document.createElement('div');
-            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600';
+
+            const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
+            const userLevel = levelNames[user.level] || `${user.level} Unknown`;
 
             div.innerHTML = `
-                <div>
+                <div class="flex-1">
                     <p class="font-bold text-slate-800 dark:text-slate-200">${user.full_name}</p>
                     <p class="text-xs text-slate-500 dark:text-slate-400">${user.email}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.phone_number}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.physical_address}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.phone_number || 'N/A'}</p>
                 </div>
-                <select onchange="updateUserLevel(${user.id}, this.value)" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 text-slate-800 dark:text-slate-200 text-sm rounded p-1">
-                    <option value="0" ${user.level === 0 ? 'selected' : ''}>0 Unverified</option>
-                    <option value="1" ${user.level === 1 ? 'selected' : ''}>1 Verified</option>
-                    <option value="2" ${user.level === 2 ? 'selected' : ''}>2 Zone Admin</option>
-                    <option value="3" ${user.level === 3 ? 'selected' : ''}>3 System Admin</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200">${userLevel}</span>
+                    <button onclick="openUserEdit(${user.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
+                </div>
             `;
             adminUserList.appendChild(div);
         });
@@ -667,6 +691,90 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error updating level:', e);
         }
     };
+
+    window.openUserEdit = async (userId) => {
+        currentEditingUserId = userId;
+        const user = allUsers.find(u => u.id === userId);
+
+        if (!user) {
+            alert('User not found');
+            return;
+        }
+
+        // Populate form
+        document.getElementById('user-fullname-input').value = user.full_name || '';
+        document.getElementById('user-email-input').value = user.email || '';
+        document.getElementById('user-phone-input').value = user.phone_number || '';
+        document.getElementById('user-address-input').value = user.physical_address || '';
+        document.getElementById('user-level-input').value = user.level || '0';
+
+        // Close user list, open edit view
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+
+        viewUserEdit.classList.remove('translate-x-full');
+        viewUserEdit.classList.add('translate-x-0');
+    };
+
+    window.closeUserEdit = () => {
+        // Close edit view, open user list
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
+
+        viewAdmin.classList.remove('translate-x-full');
+        viewAdmin.classList.add('translate-x-0');
+    };
+
+    if (userEditForm) {
+        userEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userEditMessage = document.getElementById('user-edit-message');
+            userEditMessage.classList.add('hidden');
+
+            if (!currentEditingUserId) {
+                alert('No user selected');
+                return;
+            }
+
+            const data = {
+                full_name: document.getElementById('user-fullname-input').value,
+                email: document.getElementById('user-email-input').value,
+                phone_number: document.getElementById('user-phone-input').value,
+                physical_address: document.getElementById('user-address-input').value,
+                level: parseInt(document.getElementById('user-level-input').value)
+            };
+
+            try {
+                const res = await fetch(`/api/admin/users/${currentEditingUserId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    userEditMessage.textContent = 'User updated successfully!';
+                    userEditMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+                    userEditMessage.classList.remove('hidden');
+
+                    // Refresh user list
+                    setTimeout(() => {
+                        closeUserEdit();
+                        openAdminSection('users');
+                    }, 1500);
+                } else {
+                    const result = await res.json();
+                    userEditMessage.textContent = result.error || 'Update failed';
+                    userEditMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                    userEditMessage.classList.remove('hidden');
+                }
+            } catch (err) {
+                userEditMessage.textContent = 'Network error';
+                userEditMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                userEditMessage.classList.remove('hidden');
+            }
+        });
+    }
 
     // Zone Admin Filter Logic
     if (adminZoneFilter) {
