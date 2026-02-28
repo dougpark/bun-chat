@@ -412,10 +412,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 checkinHTML = `
                     <div class="mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">${dateStr} ${timeStr}</span>
-                            <span class="text-xs text-slate-400 dark:text-slate-500">(${relativeTime})</span>
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">${dateStr} ${timeStr}</span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500">(${relativeTime})</span>
+                            </div>
+                            <button type="button" onclick="viewCheckInHistory(${member.id}, '${member.full_name.replace(/'/g, "\\'")}')"
+                                class="px-2 py-0.5 bg-blue-500 text-white rounded text-xs font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap">
+                                History
+                            </button>
                         </div>
                         <p class="text-xs text-slate-600 dark:text-slate-300">${member.status || ''}</p>
                     </div>
@@ -431,10 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="text-xs text-slate-500 dark:text-slate-400">${member.phone_number || 'N/A'}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${member.physical_address || 'N/A'}</p>
                 ${checkinHTML}
-                <button type="button" onclick="viewCheckInHistory(${member.id}, '${member.full_name.replace(/'/g, "\\'")}')"
-                    class="mt-3 w-full py-2 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 transition-colors">
-                    View History
-                </button>
             `;
             membersList.appendChild(div);
         });
