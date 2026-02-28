@@ -233,6 +233,7 @@ const server = Bun.serve<WebSocketData>({
 
             const members = db.query(`
                 SELECT 
+                    u.id,
                     u.full_name, 
                     u.level, 
                     u.physical_address, 
@@ -481,6 +482,41 @@ const server = Bun.serve<WebSocketData>({
             } catch (e: any) {
                 return new Response(JSON.stringify({ error: e.message }), { status: 500 });
             }
+        }
+
+        // Handle GET /api/user/:userId/checkins
+        if (url.pathname.match(/^\/api\/user\/\d+\/checkins$/) && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            const userId = parseInt(url.pathname.split('/')[3]);
+            const checkins = db.query(`
+                SELECT 
+                    id,
+                    status_id,
+                    status,
+                    timestamp
+                FROM checkins
+                WHERE user_id = $userId
+                ORDER BY timestamp DESC
+            `).all({ $userId: userId });
+            
+            return new Response(JSON.stringify(checkins), { headers: { "Content-Type": "application/json" } });
         }
 
         // Handle POST /api/checkin

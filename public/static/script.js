@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewUserEdit = document.getElementById('view-user-edit');
     const viewMembers = document.getElementById('view-members');
     const viewCheckIn = document.getElementById('view-checkin');
+    const viewCheckInHistory = document.getElementById('view-checkin-history');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
@@ -164,6 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close check in if open
         viewCheckIn.classList.remove('translate-x-0');
         viewCheckIn.classList.add('translate-x-full');
+
+        // Close check-in history if open
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -350,6 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewCheckIn.classList.remove('translate-x-0');
         viewCheckIn.classList.add('translate-x-full');
 
+        // Ensure check-in history is closed
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -395,6 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide check in out of view
         viewCheckIn.classList.remove('translate-x-0');
         viewCheckIn.classList.add('translate-x-full');
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -409,6 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close admin if open
         viewAdmin.classList.remove('translate-x-0');
         viewAdmin.classList.add('translate-x-full');
+
+        // Close check-in history if open
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Close admin nav if open
         viewAdminNav.classList.remove('translate-x-0');
@@ -433,6 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close check in if open
         viewCheckIn.classList.remove('translate-x-0');
         viewCheckIn.classList.add('translate-x-full');
+
+        // Close check-in history if open
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -459,6 +478,8 @@ document.addEventListener('DOMContentLoaded', () => {
         viewUserEdit.classList.add('translate-x-full');
         viewCheckIn.classList.remove('translate-x-0');
         viewCheckIn.classList.add('translate-x-full');
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Open members
         viewMembers.classList.remove('translate-x-full');
@@ -542,6 +563,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="text-xs text-slate-500 dark:text-slate-400">${member.phone_number || 'N/A'}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${member.physical_address || 'N/A'}</p>
                 ${checkinHTML}
+                <button type="button" onclick="viewCheckInHistory(${member.id}, '${member.full_name.replace(/'/g, "\\'")}')"
+                    class="mt-3 w-full py-2 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 transition-colors">
+                    View History
+                </button>
             `;
             membersList.appendChild(div);
         });
@@ -569,6 +594,90 @@ document.addEventListener('DOMContentLoaded', () => {
         membersFilter.addEventListener('input', applyMembersFilters);
     }
 
+    // View Check-in History
+    window.viewCheckInHistory = async (userId, memberName) => {
+        // Close other views
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
+
+        // Open check-in history
+        viewCheckInHistory.classList.remove('translate-x-full');
+        viewCheckInHistory.classList.add('translate-x-0');
+
+        // Set member name
+        document.getElementById('checkin-history-name').textContent = memberName;
+
+        // Fetch check-in history
+        try {
+            const res = await fetch(`/api/user/${userId}/checkins`);
+            if (res.ok) {
+                const checkins = await res.json();
+                renderCheckInHistory(checkins);
+            } else {
+                document.getElementById('checkin-history-list').innerHTML = '<p class="text-red-600 dark:text-red-400">Failed to load check-in history</p>';
+            }
+        } catch (err) {
+            console.error('Error fetching check-in history:', err);
+            document.getElementById('checkin-history-list').innerHTML = '<p class="text-red-600 dark:text-red-400">Error loading check-in history</p>';
+        }
+    };
+
+    function renderCheckInHistory(checkins) {
+        const historyList = document.getElementById('checkin-history-list');
+        historyList.innerHTML = '';
+        
+        if (checkins.length === 0) {
+            historyList.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-center">No check-in history</p>';
+            return;
+        }
+
+        checkins.forEach(checkin => {
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+
+            // Convert timestamp to local timezone
+            let timestamp = checkin.timestamp;
+            if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+                timestamp = timestamp.replace(' ', 'T') + 'Z';
+            }
+            const checkinDate = new Date(timestamp);
+            const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
+            const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const statusBadgeClass = checkin.status_id === 0 
+                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+            const statusText = checkin.status_id === 0 ? 'OK' : 'Help';
+
+            div.innerHTML = `
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
+                    <span class="text-xs text-slate-600 dark:text-slate-300">${dateStr} ${timeStr}</span>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-300">${checkin.status || '(No message)'}</p>
+            `;
+            historyList.appendChild(div);
+        });
+    }
+
     // Check In Logic
     window.openCheckIn = () => {
         // Close other views
@@ -590,6 +699,8 @@ document.addEventListener('DOMContentLoaded', () => {
         viewUserEdit.classList.add('translate-x-full');
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Open check in
         viewCheckIn.classList.remove('translate-x-full');
@@ -828,6 +939,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close members if open
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
+
+        // Close check-in history if open
+        viewCheckInHistory.classList.remove('translate-x-0');
+        viewCheckInHistory.classList.add('translate-x-full');
 
         // Open Admin Nav
         viewAdminNav.classList.remove('translate-x-full');
