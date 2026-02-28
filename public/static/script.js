@@ -46,6 +46,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('profile-form');
     const profileMessage = document.getElementById('profile-message');
 
+    // ========== CENTRALIZED NAVIGATION SYSTEM ==========
+    const navigationStack = [];
+    
+    const views = {
+        home: { el: viewHome },
+        chat: { el: viewChat },
+        settings: { el: viewSettings },
+        profile: { el: viewProfile },
+        admin: { el: viewAdmin },
+        adminNav: { el: viewAdminNav },
+        adminZones: { el: viewAdminZones },
+        zoneEdit: { el: viewZoneEdit },
+        userEdit: { el: viewUserEdit },
+        members: { el: viewMembers },
+        checkin: { el: viewCheckIn },
+        checkinHistory: { el: viewCheckInHistory },
+    };
+
+    function navigateTo(viewName, options = {}) {
+        // Close current view
+        const current = navigationStack[navigationStack.length - 1];
+        if (current && views[current]) {
+            views[current].el.classList.add('translate-x-full');
+            views[current].el.classList.remove('translate-x-0');
+        }
+        
+        // Open new view
+        if (views[viewName]) {
+            views[viewName].el.classList.remove('translate-x-full');
+            views[viewName].el.classList.add('translate-x-0');
+        }
+        
+        navigationStack.push(viewName);
+        
+        // Call any callbacks tied to this navigation
+        if (options.onNavigate) {
+            options.onNavigate();
+        }
+    }
+
+    function goBack() {
+        if (navigationStack.length > 1) {
+            navigationStack.pop();
+            const previous = navigationStack[navigationStack.length - 1];
+            
+            // Close all views and open previous
+            Object.values(views).forEach(view => {
+                view.el.classList.add('translate-x-full');
+                view.el.classList.remove('translate-x-0');
+            });
+            
+            if (views[previous]) {
+                views[previous].el.classList.remove('translate-x-full');
+                views[previous].el.classList.add('translate-x-0');
+            }
+        }
+    }
+    
+    // Initialize home view as starting point
+    navigationStack.push('home');
+    // ========== END NAVIGATION SYSTEM ==========
+
     let currentTag = '#general';
     let allTags = [];
     // let allUsers = [];
@@ -132,49 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Profile Logic
     window.openProfile = async () => {
-        // Close other views
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-
-        // Close admin if open
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        // Close admin nav if open
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-
-        // Close zone admin if open
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        // Close zone edit if open
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        // Close user edit if open
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        // Close members if open
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Close check in if open
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-
-        // Close check-in history if open
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Open Profile
-        viewProfile.classList.remove('translate-x-full');
-        viewProfile.classList.add('translate-x-0');
-
-        // Fetch User Data
+        // Fetch user profile data
         try {
             const res = await fetch('/api/me');
             if (res.ok) {
@@ -201,6 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Failed to fetch profile', e);
         }
+        
+        navigateTo('profile');
     };
 
     profileForm.addEventListener('submit', async (e) => {
@@ -315,49 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear previous messages
         messageContainer.innerHTML = '';
 
-        // Slide animation: Move chat into view
-        viewChat.classList.remove('translate-x-full');
-        viewChat.classList.add('translate-x-0');
-
-        // Ensure settings is closed
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-
-        // Ensure profile is closed
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-
-        // Ensure admin is closed
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        // Ensure admin nav is closed
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-
-        // Ensure zone admin is closed
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        // Ensure zone edit is closed
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        // Ensure user edit is closed
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        // Ensure members is closed
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Ensure check in is closed
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-
-        // Ensure check-in history is closed
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
+        // Navigate to chat view
+        navigateTo('chat');
 
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
@@ -365,144 +346,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.goHome = () => {
-        // Slide animation: Move chat out of view
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-
-        // Slide settings out of view
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-
-        // Slide profile out of view
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-
-        // Slide admin out of view
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        // Slide admin nav out of view
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-
-        // Slide zone admin out of view
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        // Slide zone edit out of view
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        // Slide user edit out of view
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        // Slide members out of view
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Slide check in out of view
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
+        navigateTo('home');
     };
 
     window.openSettings = () => {
-        // Close chat if open
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-
-        // Close profile if open
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-
-        // Close admin if open
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        // Close check-in history if open
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Close admin nav if open
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-
-        // Close zone admin if open
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        // Close zone edit if open
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        // Close user edit if open
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        // Close members if open
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Close check in if open
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-
-        // Close check-in history if open
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Open settings
-        viewSettings.classList.remove('translate-x-full');
-        viewSettings.classList.add('translate-x-0');
+        navigateTo('settings');
     };
 
     window.openMembers = async () => {
-        // Close other views
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Open members
-        viewMembers.classList.remove('translate-x-full');
-        viewMembers.classList.add('translate-x-0');
-
-        // Load members
-        await loadMembers();
-    };
-
-    async function loadMembers() {
-        try {
-            const res = await fetch('/api/members');
-            if (res.ok) {
-                const members = await res.json();
-                allMembers = members;
-                renderMembersList(members);
-            } else {
-                alert('Failed to fetch members');
+        navigateTo('members', {
+            onNavigate: async () => {
+                try {
+                    const res = await fetch('/api/members');
+                    if (res.ok) {
+                        const members = await res.json();
+                        allMembers = members;
+                        renderMembersList(members);
+                    } else {
+                        alert('Failed to fetch members');
+                    }
+                } catch (e) {
+                    console.error('Error fetching members:', e);
+                }
             }
-        } catch (e) {
-            console.error('Error fetching members:', e);
-        }
-    }
+        });
+    };
 
     function renderMembersList(members) {
         membersList.innerHTML = '';
@@ -596,32 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // View Check-in History
     window.viewCheckInHistory = async (userId, memberName) => {
-        // Close other views
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-        viewCheckIn.classList.remove('translate-x-0');
-        viewCheckIn.classList.add('translate-x-full');
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Open check-in history
-        viewCheckInHistory.classList.remove('translate-x-full');
-        viewCheckInHistory.classList.add('translate-x-0');
-
         // Set member name
         document.getElementById('checkin-history-name').textContent = memberName;
 
@@ -638,6 +480,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching check-in history:', err);
             document.getElementById('checkin-history-list').innerHTML = '<p class="text-red-600 dark:text-red-400">Error loading check-in history</p>';
         }
+        
+        navigateTo('checkinHistory');
     };
 
     function renderCheckInHistory(checkins) {
@@ -680,32 +524,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Check In Logic
     window.openCheckIn = () => {
-        // Close other views
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-        viewAdminNav.classList.remove('translate-x-0');
-        viewAdminNav.classList.add('translate-x-full');
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Open check in
-        viewCheckIn.classList.remove('translate-x-full');
-        viewCheckIn.classList.add('translate-x-0');
-
+        navigateTo('checkin');
+        
         // Clear status box and message
         checkinStatus.value = '';
         const messageDiv = document.getElementById('checkin-message');
@@ -912,57 +732,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Admin Logic
     window.openAdmin = () => {
-        // Close other views
-        viewChat.classList.remove('translate-x-0');
-        viewChat.classList.add('translate-x-full');
-        viewSettings.classList.remove('translate-x-0');
-        viewSettings.classList.add('translate-x-full');
-        viewProfile.classList.remove('translate-x-0');
-        viewProfile.classList.add('translate-x-full');
-
-        // Close admin content
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        // Close zone admin if open
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        // Close zone edit if open
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        // Close user edit if open
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        // Close members if open
-        viewMembers.classList.remove('translate-x-0');
-        viewMembers.classList.add('translate-x-full');
-
-        // Close check-in history if open
-        viewCheckInHistory.classList.remove('translate-x-0');
-        viewCheckInHistory.classList.add('translate-x-full');
-
-        // Open Admin Nav
-        viewAdminNav.classList.remove('translate-x-full');
-        viewAdminNav.classList.add('translate-x-0');
+        navigateTo('adminNav');
     };
 
     window.openAdminSection = async (section) => {
         if (section === 'users') {
-            // Close Admin Nav
-            viewAdminNav.classList.remove('translate-x-0');
-            viewAdminNav.classList.add('translate-x-full');
-
-            // Open Admin
-            viewAdmin.classList.remove('translate-x-full');
-            viewAdmin.classList.add('translate-x-0');
-
-            // Close zone admin if open
-            viewAdminZones.classList.remove('translate-x-0');
-            viewAdminZones.classList.add('translate-x-full');
-
             // Fetch Users
             try {
                 const res = await fetch('/api/admin/users');
@@ -976,19 +750,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 console.error('Error fetching users:', e);
             }
+            navigateTo('admin');
         } else if (section === 'zones') {
-            // Close Admin Nav
-            viewAdminNav.classList.remove('translate-x-0');
-            viewAdminNav.classList.add('translate-x-full');
-
-            // Close Admin
-            viewAdmin.classList.remove('translate-x-0');
-            viewAdmin.classList.add('translate-x-full');
-
-            // Open Zone Admin
-            viewAdminZones.classList.remove('translate-x-full');
-            viewAdminZones.classList.add('translate-x-0');
-
             // Fetch Zones
             try {
                 const res = await fetch('/api/admin/tags');
@@ -1002,6 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 console.error('Error fetching zones:', e);
             }
+            navigateTo('adminZones');
         }
     };
 
@@ -1070,21 +834,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('user-address-input').value = user.physical_address || '';
         document.getElementById('user-level-input').value = user.level || '0';
 
-        // Close user list, open edit view
-        viewAdmin.classList.remove('translate-x-0');
-        viewAdmin.classList.add('translate-x-full');
-
-        viewUserEdit.classList.remove('translate-x-full');
-        viewUserEdit.classList.add('translate-x-0');
+        navigateTo('userEdit');
     };
 
     window.closeUserEdit = () => {
-        // Close edit view, open user list
-        viewUserEdit.classList.remove('translate-x-0');
-        viewUserEdit.classList.add('translate-x-full');
-
-        viewAdmin.classList.remove('translate-x-full');
-        viewAdmin.classList.add('translate-x-0');
+        goBack();
     };
 
     if (userEditForm) {
@@ -1193,21 +947,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('zone-weather-input').value = zone.weather || '';
         document.getElementById('zone-person-in-charge-input').value = zone.person_in_charge || '';
 
-        // Close zone list, open edit view
-        viewAdminZones.classList.remove('translate-x-0');
-        viewAdminZones.classList.add('translate-x-full');
-
-        viewZoneEdit.classList.remove('translate-x-full');
-        viewZoneEdit.classList.add('translate-x-0');
+        navigateTo('zoneEdit');
     };
 
     window.closeZoneEdit = () => {
-        // Close edit view, open zone list
-        viewZoneEdit.classList.remove('translate-x-0');
-        viewZoneEdit.classList.add('translate-x-full');
-
-        viewAdminZones.classList.remove('translate-x-full');
-        viewAdminZones.classList.add('translate-x-0');
+        goBack();
     };
 
     if (zoneEditForm) {
