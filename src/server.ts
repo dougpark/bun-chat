@@ -231,7 +231,22 @@ const server = Bun.serve<WebSocketData>({
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
             if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
-            const members = db.query("SELECT full_name, level, physical_address, email, phone_number FROM users ORDER BY full_name").all();
+            const members = db.query(`
+                SELECT 
+                    u.full_name, 
+                    u.level, 
+                    u.physical_address, 
+                    u.email, 
+                    u.phone_number,
+                    c.status_id,
+                    c.status,
+                    c.timestamp
+                FROM users u
+                LEFT JOIN checkins c ON u.id = c.user_id AND c.timestamp = (
+                    SELECT MAX(timestamp) FROM checkins WHERE user_id = u.id
+                )
+                ORDER BY u.full_name
+            `).all();
             return new Response(JSON.stringify(members), { headers: { "Content-Type": "application/json" } });
         }
 

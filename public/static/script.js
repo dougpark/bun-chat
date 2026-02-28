@@ -490,6 +490,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
             const memberLevel = levelNames[member.level] || `${member.level} Unknown`;
 
+            // Format check-in info if available
+            let checkinHTML = '';
+            if (member.timestamp) {
+                // Convert SQLite timestamp to ISO format for proper timezone handling
+                let timestamp = member.timestamp;
+                if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+                    timestamp = timestamp.replace(' ', 'T') + 'Z';
+                }
+                const checkinDate = new Date(timestamp);
+                const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
+                const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Calculate relative time
+                const now = new Date();
+                const diffMs = now - checkinDate;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                let relativeTime;
+                if (diffHours > 0) {
+                    relativeTime = `${diffHours}h ${diffMins % 60}m ago`;
+                } else {
+                    relativeTime = `${diffMins}m ago`;
+                }
+                
+                const statusBadgeClass = member.status_id === 0 
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+                const statusText = member.status_id === 0 ? 'OK' : 'Help';
+                
+                checkinHTML = `
+                    <div class="mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">${dateStr} ${timeStr}</span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500">(${relativeTime})</span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300">${member.status || ''}</p>
+                    </div>
+                `;
+            }
+
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
                     <p class="font-bold text-slate-800 dark:text-slate-200">${member.full_name}</p>
@@ -498,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">${member.email}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">${member.phone_number || 'N/A'}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${member.physical_address || 'N/A'}</p>
+                ${checkinHTML}
             `;
             membersList.appendChild(div);
         });
@@ -541,8 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
         viewCheckIn.classList.remove('translate-x-full');
         viewCheckIn.classList.add('translate-x-0');
 
-        // Clear status box
+        // Clear status box and message
         checkinStatus.value = '';
+        const messageDiv = document.getElementById('checkin-message');
+        messageDiv.textContent = '';
+        messageDiv.className = 'text-center text-sm font-medium p-3 rounded hidden';
     };
 
     window.submitCheckIn = async (statusType) => {
@@ -560,19 +605,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res.ok) {
                 // Show success message
-                // const previousText = statusType === 'ok' ? 'OK' : 'Help';
-                // alert(`Check-in submitted: ${previousText}`);
+                const previousText = statusType === 'ok' ? 'OK' : 'Help';
+                const messageDiv = document.getElementById('checkin-message');
+                messageDiv.textContent = `Check-in submitted: ${previousText}`;
+                messageDiv.className = 'text-center text-sm font-medium p-3 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
                 
-                // Reset and go home
+                // Reset and go home after a delay
                 checkinStatus.value = '';
-                goHome();
+                setTimeout(() => {
+                    goHome();
+                }, 1500);
             } else {
                 const result = await res.json();
-                alert(result.error || 'Check-in failed');
+                const messageDiv = document.getElementById('checkin-message');
+                messageDiv.textContent = result.error || 'Check-in failed';
+                messageDiv.className = 'text-center text-sm font-medium p-3 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
             }
         } catch (err) {
             console.error('Error submitting check-in:', err);
-            alert('Network error occurred');
+            const messageDiv = document.getElementById('checkin-message');
+            messageDiv.textContent = 'Network error occurred';
+            messageDiv.className = 'text-center text-sm font-medium p-3 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
         }
     };
 

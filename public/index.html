@@ -471,24 +471,52 @@
             <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
                 <h1 class="text-xl font-bold">Check In</h1>
             </header>
-            <main class="flex-1 overflow-y-auto p-4 flex flex-col justify-center items-center">
-                <form id="checkin-form" class="w-full max-w-md space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current
-                            Status</label>
-                        <textarea id="checkin-status" name="status" placeholder="What do you need help with..."
-                            class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none h-32 resize-none"></textarea>
-                    </div>
-                    <div class="flex gap-4">
+            <main class="flex-1 overflow-y-auto p-4 flex flex-col justify-start gap-8">
+                <form id="checkin-form" class="w-full max-w-md mx-auto flex flex-col gap-8">
+                    <!-- OK Button Section at Top -->
+                    <div class="border-2 border-green-500 rounded-lg p-4 space-y-3">
+                        <!-- OK Label with Green Text Highlight -->
+                        <div class="border-b-4 border-green-500 pb-2">
+                            <p class="text-center font-bold text-xl text-green-600 dark:text-green-400">
+                                I'M OK
+                            </p>
+                        </div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Clicking "I'm OK" will notify others that you are safe and do not require assistance. This
+                            is
+                            important for keeping everyone informed during an emergency situation.
+                        </label>
                         <button type="button" onclick="submitCheckIn('ok')"
-                            class="flex-1 py-3 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-colors">
+                            class="w-full py-4 bg-green-500 text-white rounded-lg font-bold text-xl hover:bg-green-600 transition-colors shadow-md">
                             I'm OK
                         </button>
+                    </div>
+
+                    <!-- Emergency Section with Outline Box -->
+                    <div class="border-2 border-red-500 rounded-lg p-4 space-y-3">
+                        <!-- Emergency Check In Label with Red Text Highlight -->
+                        <div class="border-b-4 border-red-500 pb-2">
+                            <p class="text-center font-bold text-xl text-red-600 dark:text-red-400">
+                                EMERGENCY CHECK IN
+                            </p>
+                        </div>
+
+                        <!-- Instructions and Textarea -->
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            What is the immediate need? Where exactly are you (room/floor)? Are there injuries?
+                        </label>
+                        <textarea id="checkin-status" name="status" placeholder="Enter Details..."
+                            class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none h-32 resize-none"></textarea>
+
+                        <!-- Help Button at Bottom of Box -->
                         <button type="button" onclick="submitCheckIn('help')"
-                            class="flex-1 py-3 bg-red-500 text-white rounded-lg font-bold text-lg hover:bg-red-600 transition-colors">
+                            class="w-full py-4 bg-red-600 text-white rounded-lg font-bold text-xl hover:bg-red-700 transition-colors shadow-md">
                             I Need Help
                         </button>
                     </div>
+
+                    <!-- Status Message -->
+                    <div id="checkin-message" class="text-center text-sm font-medium p-3 rounded hidden"></div>
                 </form>
             </main>
         </div>
