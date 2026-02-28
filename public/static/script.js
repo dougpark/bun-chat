@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewSettings = document.getElementById('view-settings');
     const viewProfile = document.getElementById('view-profile');
     const viewAdmin = document.getElementById('view-admin');
+    const viewAdminNav = document.getElementById('view-admin-nav');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
@@ -31,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentTag = '#general';
     let allTags = [];
+    // let allUsers = [];
+    let currentUserLevel = 0;
 
     // Auth Logic
     async function checkAuth() {
@@ -40,7 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 viewAuth.classList.add('hidden');
 
                 const user = await res.json();
-                if ((user.level || 0) >= 3) {
+                currentUserLevel = user.level || 0;
+
+                if ((user.level || 0) >= 2) {
                     navAdmin.classList.remove('hidden');
                 } else {
                     navAdmin.classList.add('hidden');
@@ -111,6 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
         viewChat.classList.add('translate-x-full');
         viewSettings.classList.remove('translate-x-0');
         viewSettings.classList.add('translate-x-full');
+
+        // Close admin if open
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+
+        // Close admin nav if open
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -273,6 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewAdmin.classList.remove('translate-x-0');
         viewAdmin.classList.add('translate-x-full');
 
+        // Ensure admin nav is closed
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -294,6 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide admin out of view
         viewAdmin.classList.remove('translate-x-0');
         viewAdmin.classList.add('translate-x-full');
+
+        // Slide admin nav out of view
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -308,6 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close admin if open
         viewAdmin.classList.remove('translate-x-0');
         viewAdmin.classList.add('translate-x-full');
+
+        // Close admin nav if open
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
 
         // Open settings
         viewSettings.classList.remove('translate-x-full');
@@ -473,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allUsers = [];
 
     // Admin Logic
-    window.openAdmin = async () => {
+    window.openAdmin = () => {
         // Close other views
         viewChat.classList.remove('translate-x-0');
         viewChat.classList.add('translate-x-full');
@@ -482,22 +507,41 @@ document.addEventListener('DOMContentLoaded', () => {
         viewProfile.classList.remove('translate-x-0');
         viewProfile.classList.add('translate-x-full');
 
-        // Open Admin
-        viewAdmin.classList.remove('translate-x-full');
-        viewAdmin.classList.add('translate-x-0');
+        // Close admin content
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
 
-        // Fetch Users
-        try {
-            const res = await fetch('/api/admin/users');
-            if (res.ok) {
-                const users = await res.json();
-                allUsers = users; // Store for filtering
-                renderAdminUserList(users);
-            } else {
-                alert('Failed to fetch users');
+        // Open Admin Nav
+        viewAdminNav.classList.remove('translate-x-full');
+        viewAdminNav.classList.add('translate-x-0');
+    };
+
+    window.openAdminSection = async (section) => {
+        if (section === 'users') {
+            // Close Admin Nav
+            viewAdminNav.classList.remove('translate-x-0');
+            viewAdminNav.classList.add('translate-x-full');
+
+            // Open Admin
+            viewAdmin.classList.remove('translate-x-full');
+            viewAdmin.classList.add('translate-x-0');
+
+            // Fetch Users
+            try {
+                const res = await fetch('/api/admin/users');
+                if (res.ok) {
+                    const users = await res.json();
+                    allUsers = users; // Store for filtering
+                    renderAdminUserList(users);
+                } else {
+                    alert('Failed to fetch users');
+                }
+            } catch (e) {
+                console.error('Error fetching users:', e);
             }
-        } catch (e) {
-            console.error('Error fetching users:', e);
+        } else if (section === 'zones') {
+            // TODO: Implement zone admin section
+            alert('Zone Admin coming soon');
         }
     };
 
