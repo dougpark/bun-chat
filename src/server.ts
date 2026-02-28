@@ -263,7 +263,7 @@ const server = Bun.serve<WebSocketData>({
             `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 3) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             const users = db.query("SELECT id, full_name, email, level, phone_number, physical_address FROM users ORDER BY id").all();
             return new Response(JSON.stringify(users), { headers: { "Content-Type": "application/json" } });
@@ -286,7 +286,7 @@ const server = Bun.serve<WebSocketData>({
             `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 3) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
@@ -295,6 +295,65 @@ const server = Bun.serve<WebSocketData>({
                 db.run("UPDATE users SET level = $level WHERE id = $id", {
                     $level: newLevel,
                     $id: userId
+                } as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        if (url.pathname === "/api/admin/tags" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            const tags = db.query("SELECT * FROM tags ORDER BY name").all();
+            return new Response(JSON.stringify(tags), { headers: { "Content-Type": "application/json" } });
+        }
+
+        if (url.pathname === "/api/admin/tag/update" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                const body = await req.json() as any;
+                const { id, description, hazard_level, level } = body;
+
+                db.run("UPDATE tags SET description = $description, hazard_level = $hazard_level, level = $level WHERE id = $id", {
+                    $description: description,
+                    $hazard_level: hazard_level,
+                    $level: parseInt(level),
+                    $id: id
                 } as any);
 
                 return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });

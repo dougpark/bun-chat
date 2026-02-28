@@ -3,8 +3,8 @@
 ## Must Have Features
 * admin verify a user
 * Implement user-access levels
-* Implement active user list
-* 
+* Implement member list
+* Unread count bubbles
 
 ### Future Features
 - image upload
@@ -24,7 +24,7 @@
     recommend a simple integer-based "Power Level" in your WebSocketData interface:
     0: Unverified (Read-only)
     1: Verified (Can post/claim tasks)
-    2: Tag PIC (Can change status/edit tasks)
+    2: Zone Admin (Can change status/edit tasks)
     3: System Admin (Can verify users)
 
 
