@@ -468,6 +468,40 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Handle POST /api/checkin
+        if (url.pathname === "/api/checkin" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id
+                FROM sessions s 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            try {
+                const body = await req.json() as any;
+                const { status_id, status } = body;
+
+                db.run("INSERT INTO checkins (user_id, status_id, status) VALUES ($user_id, $status_id, $status)", {
+                    $user_id: session.user_id,
+                    $status_id: status_id,
+                    $status: status
+                } as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {

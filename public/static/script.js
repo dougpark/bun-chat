@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewZoneEdit = document.getElementById('view-zone-edit');
     const viewUserEdit = document.getElementById('view-user-edit');
     const viewMembers = document.getElementById('view-members');
+    const viewCheckIn = document.getElementById('view-checkin');
     const viewAuth = document.getElementById('view-auth');
     const chatHeader = document.getElementById('chat-header');
     const hazardBar = document.getElementById('hazard-bar');
@@ -32,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const membersFilter = document.getElementById('members-filter');
     const zoneEditForm = document.getElementById('zone-edit-form');
     const userEditForm = document.getElementById('user-edit-form');
+    const checkinForm = document.getElementById('checkin-form');
+    const checkinStatus = document.getElementById('checkin-status');
 
     // Auth Elements
     const loginForm = document.getElementById('login-form');
@@ -155,6 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close members if open
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
+
+        // Close check in if open
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
 
         // Open Profile
         viewProfile.classList.remove('translate-x-full');
@@ -337,6 +344,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
 
+        // Ensure check in is closed
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
+
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
@@ -378,6 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Slide members out of view
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
+
+        // Slide check in out of view
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
     };
 
     window.openSettings = () => {
@@ -413,6 +428,10 @@ document.addEventListener('DOMContentLoaded', () => {
         viewMembers.classList.remove('translate-x-0');
         viewMembers.classList.add('translate-x-full');
 
+        // Close check in if open
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
+
         // Open settings
         viewSettings.classList.remove('translate-x-full');
         viewSettings.classList.add('translate-x-0');
@@ -436,6 +455,8 @@ document.addEventListener('DOMContentLoaded', () => {
         viewZoneEdit.classList.add('translate-x-full');
         viewUserEdit.classList.remove('translate-x-0');
         viewUserEdit.classList.add('translate-x-full');
+        viewCheckIn.classList.remove('translate-x-0');
+        viewCheckIn.classList.add('translate-x-full');
 
         // Open members
         viewMembers.classList.remove('translate-x-full');
@@ -493,6 +514,67 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMembersList(filtered);
         });
     }
+
+    // Check In Logic
+    window.openCheckIn = () => {
+        // Close other views
+        viewChat.classList.remove('translate-x-0');
+        viewChat.classList.add('translate-x-full');
+        viewSettings.classList.remove('translate-x-0');
+        viewSettings.classList.add('translate-x-full');
+        viewProfile.classList.remove('translate-x-0');
+        viewProfile.classList.add('translate-x-full');
+        viewAdmin.classList.remove('translate-x-0');
+        viewAdmin.classList.add('translate-x-full');
+        viewAdminNav.classList.remove('translate-x-0');
+        viewAdminNav.classList.add('translate-x-full');
+        viewAdminZones.classList.remove('translate-x-0');
+        viewAdminZones.classList.add('translate-x-full');
+        viewZoneEdit.classList.remove('translate-x-0');
+        viewZoneEdit.classList.add('translate-x-full');
+        viewUserEdit.classList.remove('translate-x-0');
+        viewUserEdit.classList.add('translate-x-full');
+        viewMembers.classList.remove('translate-x-0');
+        viewMembers.classList.add('translate-x-full');
+
+        // Open check in
+        viewCheckIn.classList.remove('translate-x-full');
+        viewCheckIn.classList.add('translate-x-0');
+
+        // Clear status box
+        checkinStatus.value = '';
+    };
+
+    window.submitCheckIn = async (statusType) => {
+        const status = checkinStatus.value.trim();
+        
+        try {
+            const res = await fetch('/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status_id: statusType === 'ok' ? 0 : 1,
+                    status: status
+                })
+            });
+
+            if (res.ok) {
+                // Show success message
+                // const previousText = statusType === 'ok' ? 'OK' : 'Help';
+                // alert(`Check-in submitted: ${previousText}`);
+                
+                // Reset and go home
+                checkinStatus.value = '';
+                goHome();
+            } else {
+                const result = await res.json();
+                alert(result.error || 'Check-in failed');
+            }
+        } catch (err) {
+            console.error('Error submitting check-in:', err);
+            alert('Network error occurred');
+        }
+    };
 
     // UI Logic: Forms
     postForm.addEventListener('submit', (e) => {
