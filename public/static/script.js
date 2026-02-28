@@ -297,7 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // console.log('Message from server:', data);
 
             if (data.type === 'newPost') {
-                addMessageToChat(data.post);
+                // If this post is for a tag that's not currently active, increment unread count
+                if (data.post.tagName !== currentTag) {
+                    const tagIndex = allTags.findIndex(t => t.name === data.post.tagName);
+                    if (tagIndex >= 0) {
+                        allTags[tagIndex].unread_count = (allTags[tagIndex].unread_count || 0) + 1;
+                        renderZoneList(allTags);
+                    }
+                } else {
+                    // If it's for the current tag, just add to chat
+                    addMessageToChat(data.post);
+                }
             } else if (data.type === 'history') {
                 messageContainer.innerHTML = ''; // Clear previous messages
                 data.posts.forEach(post => addMessageToChat(post));
@@ -340,7 +350,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Navigate to chat view
         navigateTo('chat');
 
+        // Send openTag message to update last_viewed_at on server
         if (ws && ws.readyState === WebSocket.OPEN) {
+            // First, send openTag to mark as viewed
+            ws.send(JSON.stringify({ type: 'openTag', tag: tagName }));
+            // Then subscribe to receive new messages
             ws.send(JSON.stringify({ type: 'subscribe', tag: tagName }));
         }
     };
@@ -655,9 +669,19 @@ document.addEventListener('DOMContentLoaded', () => {
             button.className = 'w-full text-left p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors mb-2';
             button.onclick = () => openZone(tag.name);
 
+            // Build unread badge if there are unread messages
+            const unreadBadge = (tag.unread_count || 0) > 0 
+                ? `<span class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">${tag.unread_count}</span>`
+                : '';
+
             button.innerHTML = `
-                <span class="${nameClass}">${tag.name}</span>
-                <p class="text-xs text-slate-500 dark:text-slate-400">${tag.description || ''}</p>
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1">
+                        <span class="${nameClass}">${tag.name}</span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">${tag.description || ''}</p>
+                    </div>
+                    ${unreadBadge}
+                </div>
             `;
 
             zoneList.appendChild(button);

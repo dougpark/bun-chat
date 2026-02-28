@@ -567,9 +567,26 @@ const server = Bun.serve<WebSocketData>({
                 ws.subscribe(`system:${l}`);
             }
 
-            // Send initial tags (filtered by level)
+            // Send initial tags (filtered by level) with unread counts
             try {
-                const tags = db.query("SELECT * FROM tags WHERE level <= $level ORDER BY name").all({ $level: userLevel } as any);
+                const userId = ws.data.userId || 1;
+                const tags = db.query(`
+                    SELECT 
+                        t.*,
+                        COALESCE((
+                            SELECT COUNT(*) 
+                            FROM posts p 
+                            WHERE p.tag_id = t.id 
+                            AND p.timestamp > COALESCE((
+                                SELECT last_viewed_at 
+                                FROM user_tag_presence 
+                                WHERE user_id = $userId AND tag_id = t.id
+                            ), '1970-01-01')
+                        ), 0) as unread_count
+                    FROM tags t
+                    WHERE t.level <= $level
+                    ORDER BY t.name
+                `).all({ $level: userLevel, $userId: userId } as any);
                 ws.send(JSON.stringify({ type: "tags", tags }));
             } catch (error) {
                 console.error("Error sending initial tags:", error);
@@ -614,6 +631,27 @@ const server = Bun.serve<WebSocketData>({
                         tag: newTag
                     }));
                 }
+            }
+
+            if (msg.type === "openTag") {
+                const userId = ws.data.userId;
+                const tagName = msg.tag;
+                if (!tagName || !userId) return;
+
+                // Get tag ID
+                const tag = db.query("SELECT id FROM tags WHERE name = $name").get({ $name: tagName }) as { id: number } | null;
+                if (!tag) return;
+
+                // Upsert the last_viewed_at timestamp
+                db.run(`
+                    INSERT INTO user_tag_presence (user_id, tag_id, last_viewed_at)
+                    VALUES ($userId, $tagId, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, tag_id)
+                    DO UPDATE SET last_viewed_at = CURRENT_TIMESTAMP
+                `, {
+                    $userId: userId,
+                    $tagId: tag.id
+                });
             }
 
             if (msg.type === "post") {
@@ -674,11 +712,29 @@ const server = Bun.serve<WebSocketData>({
 
 console.log(`🚀 ECS Server running at http://localhost:${server.port}`);
 
-// Poll for tag changes
+// Poll for tag changes and include unread counts
 let lastTagsHash = "";
 setInterval(() => {
     try {
-        const allTags = db.query("SELECT * FROM tags ORDER BY name").all() as any[];
+        // Get all tags with unread counts for the current user (this will be filtered per-connection later)
+        // We calculate unread for a hypothetical userId here; the actual filtering happens per-subscriber
+        const allTags = db.query(`
+            SELECT 
+                t.*,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM posts p 
+                    WHERE p.tag_id = t.id 
+                    AND p.timestamp > COALESCE((
+                        SELECT last_viewed_at 
+                        FROM user_tag_presence 
+                        WHERE user_id = 1 AND tag_id = t.id
+                    ), '1970-01-01')
+                ), 0) as unread_count
+            FROM tags t
+            ORDER BY name
+        `).all() as any[];
+        
         const currentHash = JSON.stringify(allTags);
 
         if (currentHash !== lastTagsHash) {

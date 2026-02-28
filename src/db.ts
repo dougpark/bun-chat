@@ -92,6 +92,18 @@ db.run(`
   );
 `);
 
+// user_tag_presence table to track when a user last viewed a tag
+db.run(`
+  CREATE TABLE IF NOT EXISTS user_tag_presence (
+    user_id INTEGER,
+    tag_id INTEGER,
+    last_viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, tag_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+  );
+`);
+
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#general','General discussion', 'green', 'Normal', 'Admin', 0);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, person_in_charge, level) VALUES ('#medical', 'Medical emergencies', 'yellow', 'Normal', 'Admin', 0);`);
