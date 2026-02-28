@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminZoneFilter = document.getElementById('admin-zone-filter');
     const membersList = document.getElementById('members-list');
     const membersFilter = document.getElementById('members-filter');
+    const membersFilterHelpBtn = document.getElementById('members-filter-help');
+    let showOnlyHelpNeeded = false;
     const zoneEditForm = document.getElementById('zone-edit-form');
     const userEditForm = document.getElementById('user-edit-form');
     const checkinForm = document.getElementById('checkin-form');
@@ -546,15 +548,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Members filter functionality
-    if (membersFilter) {
-        membersFilter.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allMembers.filter(m => 
-                m.full_name.toLowerCase().includes(term) || 
-                m.email.toLowerCase().includes(term)
-            );
-            renderMembersList(filtered);
+    window.toggleHelpFilter = () => {
+        showOnlyHelpNeeded = !showOnlyHelpNeeded;
+        membersFilterHelpBtn.classList.toggle('bg-red-100');
+        membersFilterHelpBtn.classList.toggle('dark:bg-red-800');
+        applyMembersFilters();
+    };
+
+    function applyMembersFilters() {
+        const term = membersFilter.value.toLowerCase();
+        const filtered = allMembers.filter(m => {
+            const matchesSearch = m.full_name.toLowerCase().includes(term) || m.email.toLowerCase().includes(term);
+            const matchesHelpStatus = !showOnlyHelpNeeded || m.status_id === 1;
+            return matchesSearch && matchesHelpStatus;
         });
+        renderMembersList(filtered);
+    }
+
+    if (membersFilter) {
+        membersFilter.addEventListener('input', applyMembersFilters);
     }
 
     // Check In Logic

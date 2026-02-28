@@ -456,8 +456,14 @@
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
                     class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <input type="text" id="members-filter" placeholder="Filter by name or email..."
-                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="members-filter" placeholder="Filter by name or email..."
+                            class="flex-1 p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                        <button type="button" id="members-filter-help" onclick="toggleHelpFilter()"
+                            class="px-3 py-2 rounded border border-red-300 dark:border-red-600 bg-slate-50 dark:bg-slate-700 text-red-600 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900 transition-colors text-sm">
+                            Needs Help
+                        </button>
+                    </div>
                     <div id="members-list" class="space-y-3">
                         <!-- Members items injected here -->
                     </div>
@@ -547,7 +553,7 @@
                 <span class="text-[10px] font-bold">Members</span>
             </button>
 
-            <button
+            <button onclick="openSettings()"
                 class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
