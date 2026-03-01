@@ -3,7 +3,8 @@
 ## Must Have Features
 * member list count of help status
 * claim a help and track status updates, clear help
-* Unread count bubbles
+* if any help then show banner on top of home with button to member list
+
 
 ### Future Features
 - image upload
@@ -27,6 +28,7 @@
 * done - admin verify a user
 * done - Implement user-access levels
 * done - Implement member list
+* done - Unread count bubbles
 
 - Implement user-access levels 
     recommend a simple integer-based "Power Level" in your WebSocketData interface:

@@ -504,7 +504,11 @@ const server = Bun.serve<WebSocketData>({
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
             if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
-            const userId = parseInt(url.pathname.split('/')[3]);
+            const userIdStr = url.pathname.split('/')[3];
+            if (!userIdStr) {
+                return new Response(JSON.stringify({ error: "Invalid user ID" }), { status: 400 });
+            }
+            const userId = parseInt(userIdStr);
             const checkins = db.query(`
                 SELECT 
                     id,
@@ -585,7 +589,7 @@ const server = Bun.serve<WebSocketData>({
                     ), CURRENT_TIMESTAMP)
                     FROM tags t
                     WHERE t.level <= ?
-                `, userId, userLevel);
+                `, [userId, userLevel]);
                 
                 const tags = db.query(`
                     SELECT 
@@ -662,13 +666,10 @@ const server = Bun.serve<WebSocketData>({
                 // Upsert the last_viewed_at timestamp
                 db.run(`
                     INSERT INTO user_tag_presence (user_id, tag_id, last_viewed_at)
-                    VALUES ($userId, $tagId, CURRENT_TIMESTAMP)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(user_id, tag_id)
                     DO UPDATE SET last_viewed_at = CURRENT_TIMESTAMP
-                `, {
-                    $userId: userId,
-                    $tagId: tag.id
-                });
+                `, [userId, tag.id]);
             }
 
             if (msg.type === "requestTags") {
@@ -688,7 +689,7 @@ const server = Bun.serve<WebSocketData>({
                         ), CURRENT_TIMESTAMP)
                         FROM tags t
                         WHERE t.level <= ?
-                    `, userId, userLevel);
+                    `, [userId, userLevel]);
                     
                     const tags = db.query(`
                         SELECT 
