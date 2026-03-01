@@ -55,6 +55,11 @@ const server = Bun.serve<WebSocketData>({
             return new Response(Bun.file(filePath));
         }
 
+        if (url.pathname.startsWith("/vendor/")) {
+            const filePath = `./public${url.pathname}`;
+            return new Response(Bun.file(filePath));
+        }
+
         // Helper to get cookies
         const getCookies = (req: Request) => {
             const cookieHeader = req.headers.get("Cookie");
@@ -519,7 +524,7 @@ const server = Bun.serve<WebSocketData>({
                 WHERE user_id = $userId
                 ORDER BY timestamp DESC
             `).all({ $userId: userId });
-            
+
             return new Response(JSON.stringify(checkins), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -570,14 +575,14 @@ const server = Bun.serve<WebSocketData>({
             for (let l = 0; l <= userLevel; l++) {
                 ws.subscribe(`system:${l}`);
             }
-            
+
             // Subscribe to post updates channel to refresh tags when new posts arrive
             ws.subscribe("postUpdate");
 
             // Send initial tags (filtered by level) with unread counts
             try {
                 const userId = ws.data.userId || 1;
-                
+
                 // Initialize user_tag_presence for any tags not yet visited by this user
                 // Set last_viewed_at to the latest post timestamp in each tag, so unread count starts at 0
                 db.run(`
@@ -590,7 +595,7 @@ const server = Bun.serve<WebSocketData>({
                     FROM tags t
                     WHERE t.level <= ?
                 `, [userId, userLevel]);
-                
+
                 const tags = db.query(`
                     SELECT 
                         t.*,
@@ -677,7 +682,7 @@ const server = Bun.serve<WebSocketData>({
                 try {
                     const userId = ws.data.userId;
                     const userLevel = ws.data.userLevel || 0;
-                    
+
                     // Initialize user_tag_presence for any tags not yet visited by this user
                     // Set last_viewed_at to the latest post timestamp in each tag, so unread count starts at 0
                     db.run(`
@@ -690,7 +695,7 @@ const server = Bun.serve<WebSocketData>({
                         FROM tags t
                         WHERE t.level <= ?
                     `, [userId, userLevel]);
-                    
+
                     const tags = db.query(`
                         SELECT 
                             t.*,
@@ -762,7 +767,7 @@ const server = Bun.serve<WebSocketData>({
                     type: "newPost",
                     post: newPost
                 }));
-                
+
                 // 4. Notify all connected clients that a new post arrived (even those not subscribed to this tag)
                 // This allows them to refresh their unread counts
                 ws.data.server.publish("postUpdate", JSON.stringify({

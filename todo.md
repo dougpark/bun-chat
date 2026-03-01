@@ -4,7 +4,16 @@
 * member list count of help status
 * claim a help and track status updates, clear help
 * if any help then show banner on top of home with button to member list
+* reactions to a post - up, down, seen, done
 
+### Optimization Tasks
+* In your renderMessage function, check how many messages are in the container. If it's over 200, remove the oldest one before adding the newest one.
+* The "Feature Complete" Checklist
+Before you pivot to optimization, here is what "Feature Complete" usually looks like for a robust ECS:
+The Happy Path: Can a user register, join a tag, post a message, and react?
+The Admin Path: Can an admin change a tag's hazard level and verify a user?
+The Emergency Path: Can a user hit "Need Help," and does it show up prominently for others?
+Persistence: If you pull the plug on the server and restart it, is the state exactly where you left it?
 
 ### Future Features
 - image upload

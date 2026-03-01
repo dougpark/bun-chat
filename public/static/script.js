@@ -1,5 +1,7 @@
 // public/static/script.js
 
+import { ICONS } from './icons.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const messageContainer = document.getElementById('message-container');
@@ -46,9 +48,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('profile-form');
     const profileMessage = document.getElementById('profile-message');
 
+    // ========== ICONS ========== //
+
+    // insert svg icons into DOM at placeholders
+
+    const initIcons = () => {
+        const inject = (selector, iconHtml) => {
+            document.querySelectorAll(selector).forEach(el => el.innerHTML = iconHtml);
+        };
+
+        inject('.icon-back', ICONS.back);
+        inject('.icon-send', ICONS.send);
+        inject('.icon-home', ICONS.home);
+        inject('.icon-bell', ICONS.bell);
+        inject('.icon-users', ICONS.users);
+        inject('.icon-settings', ICONS.settings);
+        inject('.icon-admin', ICONS.admin);
+        inject('.icon-zones', ICONS.zones);
+    };
+
+    // Run it immediately
+    initIcons();
+
     // ========== CENTRALIZED NAVIGATION SYSTEM ==========
     const navigationStack = [];
-    
+
     const views = {
         home: { el: viewHome },
         chat: { el: viewChat },
@@ -73,21 +97,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
             }
         }
-        
+
         // Close current view
         if (current && views[current]) {
             views[current].el.classList.add('translate-x-full');
             views[current].el.classList.remove('translate-x-0');
         }
-        
+
         // Open new view
         if (views[viewName]) {
             views[viewName].el.classList.remove('translate-x-full');
             views[viewName].el.classList.add('translate-x-0');
         }
-        
+
         navigationStack.push(viewName);
-        
+
         // Call any callbacks tied to this navigation
         if (options.onNavigate) {
             options.onNavigate();
@@ -104,23 +128,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
                 }
             }
-            
+
             navigationStack.pop();
             const previous = navigationStack[navigationStack.length - 1];
-            
+
             // Close all views and open previous
             Object.values(views).forEach(view => {
                 view.el.classList.add('translate-x-full');
                 view.el.classList.remove('translate-x-0');
             });
-            
+
             if (views[previous]) {
                 views[previous].el.classList.remove('translate-x-full');
                 views[previous].el.classList.add('translate-x-0');
             }
         }
     }
-    
+
     // Initialize home view as starting point
     navigationStack.push('home');
     // ========== END NAVIGATION SYSTEM ==========
@@ -238,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error('Failed to fetch profile', e);
         }
-        
+
         navigateTo('profile');
     };
 
@@ -434,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const checkinDate = new Date(timestamp);
                 const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
                 const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
+
                 // Calculate relative time
                 const now = new Date();
                 const diffMs = now - checkinDate;
@@ -446,12 +470,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     relativeTime = `${diffMins}m ago`;
                 }
-                
-                const statusBadgeClass = member.status_id === 0 
+
+                const statusBadgeClass = member.status_id === 0
                     ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                     : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
                 const statusText = member.status_id === 0 ? 'OK' : 'Help';
-                
+
                 checkinHTML = `
                     <div class="mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
                         <div class="flex items-center justify-between gap-2 mb-1">
@@ -524,14 +548,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching check-in history:', err);
             document.getElementById('checkin-history-list').innerHTML = '<p class="text-red-600 dark:text-red-400">Error loading check-in history</p>';
         }
-        
+
         navigateTo('checkinHistory');
     };
 
     function renderCheckInHistory(checkins) {
         const historyList = document.getElementById('checkin-history-list');
         historyList.innerHTML = '';
-        
+
         if (checkins.length === 0) {
             historyList.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-center">No check-in history</p>';
             return;
@@ -549,8 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkinDate = new Date(timestamp);
             const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
             const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            const statusBadgeClass = checkin.status_id === 0 
+
+            const statusBadgeClass = checkin.status_id === 0
                 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                 : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
             const statusText = checkin.status_id === 0 ? 'OK' : 'Help';
@@ -569,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check In Logic
     window.openCheckIn = () => {
         navigateTo('checkin');
-        
+
         // Clear status box and message
         checkinStatus.value = '';
         const messageDiv = document.getElementById('checkin-message');
@@ -579,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.submitCheckIn = async (statusType) => {
         const status = checkinStatus.value.trim();
-        
+
         try {
             const res = await fetch('/api/checkin', {
                 method: 'POST',
@@ -596,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const messageDiv = document.getElementById('checkin-message');
                 messageDiv.textContent = `Check-in submitted: ${previousText}`;
                 messageDiv.className = 'text-center text-sm font-medium p-3 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-                
+
                 // Reset and go home after a delay
                 checkinStatus.value = '';
                 setTimeout(() => {
@@ -677,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderZoneList(tags) {
         if (!zoneList) return;
         zoneList.innerHTML = '';
-        
+
         tags.forEach(tag => {
             const button = document.createElement('button');
 
@@ -699,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.onclick = () => openZone(tag.name);
 
             // Build unread badge if there are unread messages
-            const unreadBadge = (tag.unread_count || 0) > 0 
+            const unreadBadge = (tag.unread_count || 0) > 0
                 ? `<span class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ">${tag.unread_count}</span>`
                 : '';
 
