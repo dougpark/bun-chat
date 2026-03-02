@@ -100,30 +100,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (helpEl) helpEl.textContent = String(helpAlerts);
         if (alertsEl) alertsEl.textContent = String(zoneAlerts);
 
-        // Apply dashboard-level styling based on alerts
+        // Visual State Escalation based on new goals
+        // Remove all possible state classes first for clean state transitions
+        const stateClasses = [
+            'bg-emerald-50/50', 'bg-amber-50/50', 'bg-red-50/80',
+            'border-emerald-500', 'border-amber-500', 'border-red-600',
+            'dark:bg-emerald-950/20', 'dark:bg-amber-950/20', 'dark:bg-red-900/30',
+            'dark:border-emerald-500', 'dark:border-amber-500', 'dark:border-red-500'
+        ];
+        stateClasses.forEach(cls => dash.classList.remove(cls));
+        dash.classList.remove('animate-pulse');
+
         if (helpAlerts > 0) {
-            // Red alert with pulse animation
-            dash.classList.replace('bg-emerald-50/50', 'bg-red-50/80');
-            dash.classList.replace('border-emerald-500', 'border-red-600');
-            dash.classList.replace('dark:bg-emerald-950/20', 'dark:bg-red-900/30');
-            dash.classList.replace('dark:border-emerald-500', 'dark:border-red-500');
-            if (!dash.classList.contains('animate-pulse')) {
-                dash.classList.add('animate-pulse');
-            }
+            // Help Alert > 0: Red border + animate-pulse (Most urgent)
+            dash.classList.add('bg-red-50/80', 'border-red-600');
+            dash.classList.add('dark:bg-red-900/30', 'dark:border-red-500');
+            dash.classList.add('animate-pulse');
+        } else if (zoneAlerts >= 3) {
+            // Level 4 (Red): 3+ zone alerts - Solid red border
+            dash.classList.add('bg-red-50/80', 'border-red-600');
+            dash.classList.add('dark:bg-red-900/30', 'dark:border-red-500');
         } else if (zoneAlerts > 0) {
-            // Solid red border but no pulse
-            dash.classList.replace('bg-emerald-50/50', 'bg-red-50/80');
-            dash.classList.replace('border-emerald-500', 'border-red-600');
-            dash.classList.replace('dark:bg-emerald-950/20', 'dark:bg-red-900/30');
-            dash.classList.replace('dark:border-emerald-500', 'dark:border-red-500');
-            dash.classList.remove('animate-pulse');
+            // Level 2/3 (Yellow/Orange): 1-2 zone alerts - Solid yellow border
+            dash.classList.add('bg-amber-50/50', 'border-amber-500');
+            dash.classList.add('dark:bg-amber-950/20', 'dark:border-amber-500');
         } else {
-            // Green normal state
-            dash.classList.replace('bg-red-50/80', 'bg-emerald-50/50');
-            dash.classList.replace('border-red-600', 'border-emerald-500');
-            dash.classList.replace('dark:bg-red-900/30', 'dark:bg-emerald-950/20');
-            dash.classList.replace('dark:border-red-500', 'dark:border-emerald-500');
-            dash.classList.remove('animate-pulse');
+            // Level 1 (Green): No alerts - Standard emerald border
+            dash.classList.add('bg-emerald-50/50', 'border-emerald-500');
+            dash.classList.add('dark:bg-emerald-950/20', 'dark:border-emerald-500');
         }
     }
 
