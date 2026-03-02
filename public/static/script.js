@@ -71,6 +71,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run it immediately
     initIcons();
 
+    // ========== Dashboard Update Logic ========== //
+    function updateDashboard(data) {
+        const dash = document.getElementById('dashboard');
+        if (!dash) return;
+
+        const members = Number(data.members_count ?? data.members ?? 0);
+        const help = Number(data.help_count ?? data.help ?? 0);
+        const alerts = Number(data.non_green_count ?? data.alerts ?? 0);
+
+        const membersEl = document.getElementById('stat-members');
+        const helpEl = document.getElementById('stat-help');
+        const alertsEl = document.getElementById('stat-alerts');
+
+        // Update numbers
+        if (membersEl) membersEl.textContent = String(members);
+        if (helpEl) helpEl.textContent = String(help);
+        if (alertsEl) alertsEl.textContent = String(alerts);
+
+        if (help > 0) {
+            dash.classList.replace('bg-emerald-50/50', 'bg-red-50/80');
+            dash.classList.replace('border-emerald-500', 'border-red-600');
+            dash.classList.replace('dark:bg-emerald-950/20', 'dark:bg-red-900/30');
+            dash.classList.replace('dark:border-emerald-500', 'dark:border-red-500');
+            dash.classList.add('animate-pulse');
+        } else {
+            dash.classList.replace('bg-red-50/80', 'bg-emerald-50/50');
+            dash.classList.replace('border-red-600', 'border-emerald-500');
+            dash.classList.replace('dark:bg-red-900/30', 'dark:bg-emerald-950/20');
+            dash.classList.replace('dark:border-red-500', 'dark:border-emerald-500');
+            dash.classList.remove('animate-pulse');
+        }
+    }
+
     // ========== CENTRALIZED NAVIGATION SYSTEM ==========
     const navigationStack = [];
 
@@ -365,6 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tag = allTags.find(t => t.name === currentTag);
                     if (tag) updateHeaderStyle(tag.hazard_level);
                 }
+            } else if (data.type === 'DASHBOARD_UPDATE') {
+                updateDashboard(data);
             }
         };
 

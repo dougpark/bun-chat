@@ -85,7 +85,30 @@
             <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
 
                 <h1 class="text-xl font-bold">Emergency Chat</h1>
+                <div id="dashboard"
+                    class="mx-4 mt-4 p-3 rounded-xl border-2 transition-all duration-500 bg-emerald-50/50 border-emerald-500 dark:bg-emerald-950/20 dark:border-emerald-500">
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="flex flex-col border-r border-slate-200 dark:border-vsdark-border last:border-0">
+                            <span id="stat-members"
+                                class="text-lg font-black text-slate-800 dark:text-vsdark-text">0</span>
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Members</span>
+                        </div>
 
+                        <div class="flex flex-col border-r border-slate-200 dark:border-vsdark-border last:border-0">
+                            <span id="stat-help"
+                                class="text-lg font-black text-slate-800 dark:text-vsdark-text">0</span>
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Help
+                                Alerts</span>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span id="stat-alerts"
+                                class="text-lg font-black text-slate-800 dark:text-vsdark-text">0</span>
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Zone
+                                Alerts</span>
+                        </div>
+                    </div>
+                </div>
 
             </header>
             <main id="zone-list" class="flex-1 overflow-y-auto p-4 space-y-2">

@@ -37,6 +37,42 @@ async function verifySignature(value: string, signature: string) {
     return expectedSig === signature;
 }
 
+interface DashboardStats {
+    members_count: number;
+    help_count: number;
+    non_green_count: number;
+}
+
+function getDashboardStats(): DashboardStats {
+    const members = db.query(`SELECT COUNT(*) as count FROM users`).get() as { count: number } | null;
+
+    const activeHelp = db.query(`
+        SELECT COUNT(*) as count
+        FROM (
+            SELECT c.user_id, c.status_id
+            FROM checkins c
+            INNER JOIN (
+                SELECT user_id, MAX(timestamp) as latest_timestamp
+                FROM checkins
+                GROUP BY user_id
+            ) latest ON latest.user_id = c.user_id AND latest.latest_timestamp = c.timestamp
+            WHERE c.status_id = 1
+        )
+    `).get() as { count: number } | null;
+
+    const nonGreenZones = db.query(`
+        SELECT COUNT(*) as count
+        FROM tags
+        WHERE LOWER(COALESCE(hazard_level, 'green')) <> 'green'
+    `).get() as { count: number } | null;
+
+    return {
+        members_count: members?.count ?? 0,
+        help_count: activeHelp?.count ?? 0,
+        non_green_count: nonGreenZones?.count ?? 0,
+    };
+}
+
 const server = Bun.serve<WebSocketData>({
     port: PORT,
     async fetch(req, server) {
@@ -569,6 +605,7 @@ const server = Bun.serve<WebSocketData>({
             console.log(`WebSocket opened from: ${ws.remoteAddress}, UserID: ${ws.data.userId}, Level: ${ws.data.userLevel}`);
             // Join the default channel
             ws.subscribe("#general");
+            ws.subscribe("dashboard");
 
             // Subscribe to level-based system channels
             const userLevel = ws.data.userLevel || 0;
@@ -614,6 +651,9 @@ const server = Bun.serve<WebSocketData>({
                     ORDER BY t.name
                 `).all(userId, userLevel) as any;
                 ws.send(JSON.stringify({ type: "tags", tags }));
+
+                const stats = getDashboardStats();
+                ws.send(JSON.stringify({ type: "DASHBOARD_UPDATE", ...stats }));
             } catch (error) {
                 console.error("Error sending initial tags:", error);
             }
@@ -774,6 +814,13 @@ const server = Bun.serve<WebSocketData>({
                     type: "postUpdate",
                     tag: tagName
                 }));
+            }
+
+            try {
+                const stats = getDashboardStats();
+                ws.data.server.publish("dashboard", JSON.stringify({ type: "DASHBOARD_UPDATE", ...stats }));
+            } catch (error) {
+                console.error("Error publishing dashboard stats:", error);
             }
         },
         close(ws, code, message) {
