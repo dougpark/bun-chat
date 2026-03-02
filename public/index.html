@@ -12,17 +12,29 @@
 
     <style type="text/tailwindcss">
         @variant dark (&:where(.dark, .dark *));
+        
+        @theme {
+            --color-vsdark-bg: #1e1e1e;
+            --color-vsdark-secondary: #252526;
+            --color-vsdark-surface: #2d2d30;
+            --color-vsdark-input: #3c3c3c;
+            --color-vsdark-border: #3e3e42;
+            --color-vsdark-border-light: #454545;
+            --color-vsdark-text: #d4d4d4;
+            --color-vsdark-text-muted: #858585;
+            --color-vsdark-text-secondary: #969696;
+        }
     </style>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 font-sans antialiased overflow-hidden">
+<body class="bg-slate-50 text-slate-900 dark:bg-[#1e1e1e] dark:text-[#d4d4d4] font-sans antialiased overflow-hidden">
     <div id="app"
-        class="relative w-full h-full max-w-md mx-auto bg-white dark:bg-slate-900 shadow-xl overflow-hidden flex flex-col h-screen">
+        class="relative w-full h-full max-w-md mx-auto bg-white dark:bg-[#252526] shadow-xl overflow-hidden flex flex-col h-screen">
 
         <!-- Auth View -->
         <div id="view-auth"
-            class="absolute inset-0 bg-white dark:bg-slate-900 z-50 flex flex-col items-center justify-center p-6 hidden">
+            class="absolute inset-0 bg-white dark:bg-[#252526] z-50 flex flex-col items-center justify-center p-6 hidden">
 
             <h1 class="text-3xl font-bold text-orange-500 dark:text-orange-400 mb-8">Bun Chat</h1>
 
@@ -30,9 +42,9 @@
             <form id="login-form" class="w-full max-w-sm space-y-4">
                 <h2 class="text-xl font-semibold mb-4">Login</h2>
                 <input type="email" name="email" placeholder="Email" required
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#2d2d30] focus:ring-2 focus:ring-orange-500 outline-none">
                 <input type="password" name="password" placeholder="Password" required
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#2d2d30] focus:ring-2 focus:ring-orange-500 outline-none">
                 <button type="submit"
                     class="w-full py-3 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 transition-colors">Sign
                     In</button>
@@ -46,15 +58,15 @@
             <form id="register-form" class="w-full max-w-sm space-y-4 hidden">
                 <h2 class="text-xl font-semibold mb-4">Create Account</h2>
                 <input type="text" name="full_name" placeholder="Full Name" required
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] focus:ring-2 focus:ring-orange-500 outline-none">
                 <input type="email" name="email" placeholder="Email" required
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#2d2d30] focus:ring-2 focus:ring-orange-500 outline-none">
                 <input type="password" name="password" placeholder="Password" required
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#2d2d30] focus:ring-2 focus:ring-orange-500 outline-none">
                 <input type="text" name="phone_number" placeholder="Phone Number"
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] focus:ring-2 focus:ring-orange-500 outline-none">
                 <input type="text" name="physical_address" placeholder="Address"
-                    class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-orange-500 outline-none">
+                    class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] focus:ring-2 focus:ring-orange-500 outline-none">
                 <button type="submit"
                     class="w-full py-3 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 transition-colors">Register</button>
                 <p class="text-sm text-center text-slate-500">
@@ -67,8 +79,8 @@
 
         <!-- View 1: Home / Directory -->
         <div id="view-home"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-10 transition-transform duration-300 ease-in-out transform translate-x-0 pb-16">
-            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-10 transition-transform duration-300 ease-in-out transform translate-x-0 pb-16">
+            <header class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md">
 
                 <h1 class="text-xl font-bold">Emergency Chat</h1>
 
@@ -81,10 +93,10 @@
 
         <!-- View 2: Chat Zone (Initially off-screen to the right) -->
         <div id="view-chat"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <!-- Header -->
             <header id="chat-header"
-                class="bg-slate-700 dark:bg-slate-800 text-white p-4 shadow-md flex-none transition-colors duration-300">
+                class="bg-slate-700 dark:bg-[#2d2d30] text-white p-4 shadow-md flex-none transition-colors duration-300">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <button onclick="goHome()" class="mr-2 text-white/80 hover:text-white">
@@ -104,15 +116,15 @@
             </header>
 
             <!-- Messages -->
-            <main id="message-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900">
+            <main id="message-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-[#252526]">
                 <!-- Messages will be injected here -->
             </main>
 
             <!-- Input Area -->
-            <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex-none">
+            <div class="p-4 bg-white dark:bg-[#2d2d30] border-t border-slate-200 dark:border-[#3e3e42] flex-none">
                 <form id="post-form" class="flex gap-2">
                     <input type="text" id="post-content" placeholder="Message..."
-                        class="flex-1 bg-slate-100 dark:bg-slate-700 border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none text-slate-800 dark:text-slate-100 dark:placeholder-slate-400">
+                        class="flex-1 bg-slate-100 dark:bg-[#3c3c3c] border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none text-slate-800 dark:text-[#d4d4d4] dark:placeholder-[#858585]">
                     <button type="submit"
                         class="bg-orange-500 text-white p-2 rounded-full hover:bg-orange-600 transition-colors flex-none">
                         <span class="icon-send"></span>
@@ -123,16 +135,16 @@
 
         <!-- View 3: Settings (Initially off-screen) -->
         <div id="view-settings"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md">
                 <h1 class="text-xl font-bold">Settings</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 class="text-lg font-bold mb-4 dark:text-white">Appearance</h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 class="text-lg font-bold mb-4 dark:text-[#d4d4d4]">Appearance</h2>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-700 dark:text-slate-300">Dark Mode</span>
+                        <span class="text-slate-700 dark:text-[#cccccc]">Dark Mode</span>
                         <button id="theme-toggle" onclick="toggleTheme()"
                             class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 dark:bg-orange-500 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 cursor-pointer">
                             <span class="sr-only">Use setting</span>
@@ -143,8 +155,8 @@
                 </div>
 
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 class="text-lg font-bold mb-4 dark:text-white">Profile</h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 class="text-lg font-bold mb-4 dark:text-[#d4d4d4]">Profile</h2>
                     <button onclick="openProfile()"
                         class="w-full py-2 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 transition-colors">
                         Edit Profile
@@ -152,8 +164,8 @@
                 </div>
 
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 class="text-lg font-bold mb-4 dark:text-white">Account</h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 class="text-lg font-bold mb-4 dark:text-[#d4d4d4]">Account</h2>
                     <button onclick="logout()"
                         class="w-full py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors">
                         Logout
@@ -164,48 +176,48 @@
 
         <!-- View 4: Profile (Initially off-screen) -->
         <div id="view-profile"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
-                <button onclick="openSettings()" class="text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
+                <button onclick="openSettings()" class="text-slate-500 dark:text-[#969696] hover:text-orange-500">
                     <span class="icon-back"></span>
                 </button>
                 <h1 class="text-xl font-bold">Profile</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
                     <div
-                        class="mb-4 p-3 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-center">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wide font-bold">Account
+                        class="mb-4 p-3 bg-slate-100 dark:bg-[#3c3c3c] rounded border border-slate-200 dark:border-[#454545] text-center">
+                        <p class="text-sm text-slate-500 dark:text-[#969696] uppercase tracking-wide font-bold">Account
                             Level</p>
                         <p id="profile-level-display" class="text-lg font-bold text-orange-600 dark:text-orange-400">
                             Loading...</p>
                     </div>
                     <form id="profile-form" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Full
                                 Name</label>
                             <input type="text" name="full_name" required
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Email</label>
                             <input type="email" name="email" required
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Phone</label>
                             <input type="text" name="phone_number"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Address</label>
                             <input type="text" name="physical_address"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div class="pt-2">
                             <button type="submit"
@@ -220,8 +232,8 @@
 
         <!-- View 5: Admin Nav (Initially off-screen) -->
         <div id="view-admin-nav"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md">
                 <h1 class="text-xl font-bold">Administration</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col justify-center items-center">
@@ -240,11 +252,11 @@
 
         <!-- View 6: Admin Content (Initially off-screen) -->
         <div id="view-admin"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <button onclick="openAdmin()" class="mr-2 text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                    <button onclick="openAdmin()" class="mr-2 text-slate-500 dark:text-[#969696] hover:text-orange-500">
                         <span class="icon-back"></span>
                     </button>
                     <h1 class="text-xl font-bold">User Admin</h1>
@@ -252,10 +264,10 @@
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 class="text-lg font-bold mb-4 dark:text-white">Users</h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 class="text-lg font-bold mb-4 dark:text-[#d4d4d4]">Users</h2>
                     <input type="text" id="admin-user-filter" placeholder="Filter by name..."
-                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                     <div id="admin-user-list" class="space-y-2">
                         <!-- User items injected here -->
                     </div>
@@ -265,11 +277,11 @@
 
         <!-- View 7: Zone Admin Content (Initially off-screen) -->
         <div id="view-admin-zones"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <button onclick="openAdmin()" class="mr-2 text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                    <button onclick="openAdmin()" class="mr-2 text-slate-500 dark:text-[#969696] hover:text-orange-500">
                         <span class="icon-back"></span>
                     </button>
                     <h1 class="text-xl font-bold">Zone Admin</h1>
@@ -277,10 +289,10 @@
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 class="text-lg font-bold mb-4 dark:text-white">Zones</h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 class="text-lg font-bold mb-4 dark:text-[#d4d4d4]">Zones</h2>
                     <input type="text" id="admin-zone-filter" placeholder="Filter by name..."
-                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                        class="w-full p-2 mb-4 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                     <div id="admin-zone-list" class="space-y-2">
                         <!-- Zone items injected here -->
                     </div>
@@ -290,12 +302,12 @@
 
         <!-- View 8: Zone Edit Modal (Initially off-screen) -->
         <div id="view-zone-edit"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="closeZoneEdit()"
-                        class="mr-2 text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                        class="mr-2 text-slate-500 dark:text-[#969696] hover:text-orange-500">
                         <span class="icon-back"></span>
                     </button>
                     <h1 class="text-xl font-bold">Edit Zone</h1>
@@ -303,26 +315,26 @@
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
                     <form id="zone-edit-form" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Zone
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Zone
                                 Name</label>
                             <input type="text" id="zone-name-input" name="name" required
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Description</label>
                             <textarea id="zone-description-input" name="description"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none"
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none"
                                 rows="3"></textarea>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hazard
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Hazard
                                 Level</label>
                             <select id="zone-hazard-level-input" name="hazard_level"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                                 <option value="green">Green</option>
                                 <option value="yellow">Yellow</option>
                                 <option value="orange">Orange</option>
@@ -330,10 +342,10 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Access
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Access
                                 Level</label>
                             <select id="zone-level-input" name="level"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                                 <option value="0">0 Unverified</option>
                                 <option value="1">1 Verified</option>
                                 <option value="2">2 Zone Admin</option>
@@ -342,15 +354,15 @@
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Weather</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Weather</label>
                             <input type="text" id="zone-weather-input" name="weather"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Person in
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Person in
                                 Charge</label>
                             <input type="text" id="zone-person-in-charge-input" name="person_in_charge"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div class="pt-2">
                             <button type="submit"
@@ -365,12 +377,12 @@
 
         <!-- View 9: User Edit Modal (Initially off-screen) -->
         <div id="view-user-edit"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="closeUserEdit()"
-                        class="mr-2 text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                        class="mr-2 text-slate-500 dark:text-[#969696] hover:text-orange-500">
                         <span class="icon-back"></span>
                     </button>
                     <h1 class="text-xl font-bold">Edit User</h1>
@@ -378,37 +390,37 @@
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
                     <form id="user-edit-form" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Full
                                 Name</label>
                             <input type="text" id="user-fullname-input" name="full_name" required
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Email</label>
                             <input type="email" id="user-email-input" name="email" required
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Phone
                                 Number</label>
                             <input type="text" id="user-phone-input" name="phone_number"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Physical
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Physical
                                 Address</label>
                             <input type="text" id="user-address-input" name="physical_address"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Access
+                            <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc] mb-1">Access
                                 Level</label>
                             <select id="user-level-input" name="level"
-                                class="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                                class="w-full p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                                 <option value="0">0 Unverified</option>
                                 <option value="1">1 Verified</option>
                                 <option value="2">2 Zone Admin</option>
@@ -428,18 +440,18 @@
 
         <!-- View 10: Members (Initially off-screen) -->
         <div id="view-members"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md">
                 <h1 class="text-xl font-bold">Members</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
                     <div class="flex gap-2 mb-4">
                         <input type="text" id="members-filter" placeholder="Filter by name or email..."
-                            class="flex-1 p-2 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                            class="flex-1 p-2 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none">
                         <button type="button" id="members-filter-help" onclick="toggleHelpFilter()"
-                            class="px-3 py-2 rounded border border-red-300 dark:border-red-600 bg-slate-50 dark:bg-slate-700 text-red-600 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-900 transition-colors text-sm">
+                            class="px-3 py-2 rounded border border-red-300 dark:border-red-600 bg-slate-50 dark:bg-[#3c3c3c] text-red-600 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-[#5a1818] transition-colors text-sm">
                             Needs Help
                         </button>
                     </div>
@@ -452,18 +464,18 @@
 
         <!-- View 11: Check-in History (Initially off-screen) -->
         <div id="view-checkin-history"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
-                <button onclick="openMembers()" class="text-slate-500 dark:text-slate-400 hover:text-orange-500">
+                class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
+                <button onclick="openMembers()" class="text-slate-500 dark:text-[#969696] hover:text-orange-500">
                     <span class="icon-bell"></span>
                 </button>
                 <h1 class="text-xl font-bold">Check-in History</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4">
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h2 id="checkin-history-name" class="text-lg font-bold mb-4 dark:text-white"></h2>
+                    class="bg-white dark:bg-[#2d2d30] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42]">
+                    <h2 id="checkin-history-name" class="text-lg font-bold mb-4 dark:text-[#d4d4d4]"></h2>
                     <div id="checkin-history-list" class="space-y-3">
                         <!-- Check-in items will be injected here -->
                     </div>
@@ -473,8 +485,8 @@
 
         <!-- View 6: Check In -->
         <div id="view-checkin"
-            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-slate-900 z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-slate-800 text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-[#252526] z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header class="bg-white dark:bg-[#2d2d30] text-orange-500 dark:text-orange-400 p-4 shadow-md">
                 <h1 class="text-xl font-bold">Check In</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 flex flex-col justify-start gap-8">
@@ -487,7 +499,7 @@
                                 I'M OK
                             </p>
                         </div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc]">
                             Clicking "I'm OK" will notify others that you are safe and do not require assistance. This
                             is
                             important for keeping everyone informed during an emergency situation.
@@ -508,11 +520,11 @@
                         </div>
 
                         <!-- Instructions and Textarea -->
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-[#cccccc]">
                             What is the immediate need? Where exactly are you (room/floor)? Are there injuries?
                         </label>
                         <textarea id="checkin-status" name="status" placeholder="Enter Details..."
-                            class="w-full p-3 rounded border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none h-32 resize-none"></textarea>
+                            class="w-full p-3 rounded border border-slate-300 dark:border-[#454545] bg-slate-50 dark:bg-[#3c3c3c] dark:text-[#d4d4d4] focus:ring-2 focus:ring-orange-500 outline-none h-32 resize-none"></textarea>
 
                         <!-- Help Button at Bottom of Box -->
                         <button type="button" onclick="submitCheckIn('help')"
@@ -529,29 +541,29 @@
 
         <!-- Bottom Nav (Persistent) -->
         <nav
-            class="absolute bottom-0 left-0 right-0 z-30 flex justify-around bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16">
+            class="absolute bottom-0 left-0 right-0 z-30 flex justify-around bg-white dark:bg-[#252526] border-t border-slate-200 dark:border-[#3e3e42] py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16">
             <button onclick="goHome()" class="flex flex-col items-center text-orange-500 dark:text-orange-400">
                 <span class="icon-home"></span>
                 <span class="text-[10px] font-bold">Home</span>
             </button>
             <button onclick="openCheckIn()"
-                class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-[#d4d4d4]0 hover:text-orange-500 dark:hover:text-orange-400">
                 <span class="icon-bell"></span>
                 <span class="text-[10px] font-bold">Check In</span>
             </button>
             <button onclick="openMembers()"
-                class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-[#d4d4d4]0 hover:text-orange-500 dark:hover:text-orange-400">
                 <span class="icon-users"></span>
                 <span class="text-[10px] font-bold">Members</span>
             </button>
 
             <button onclick="openSettings()"
-                class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-[#d4d4d4]0 hover:text-orange-500 dark:hover:text-orange-400">
                 <span class="icon-settings"></span>
                 <span class="text-[10px] font-bold">Settings</span>
             </button>
             <button id="nav-admin" onclick="openAdmin()"
-                class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-orange-500 dark:hover:text-orange-400 hidden">
+                class="flex flex-col items-center text-slate-400 dark:text-[#d4d4d4]0 hover:text-orange-500 dark:hover:text-orange-400 hidden">
                 <span class="icon-admin"></span>
                 <span class="text-[10px] font-bold">Admin</span>
             </button>

@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         membersList.innerHTML = '';
         members.forEach(member => {
             const div = document.createElement('div');
-            div.className = 'p-3 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+            div.className = 'p-3 bg-white dark:bg-[#3c3c3c] rounded border border-slate-200 dark:border-[#454545]';
 
             const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
             const memberLevel = levelNames[member.level] || `${member.level} Unknown`;
@@ -478,31 +478,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusText = member.status_id === 0 ? 'OK' : 'Help';
 
                 checkinHTML = `
-                    <div class="mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
+                    <div class="mt-3 pt-3 border-t border-slate-300 dark:border-[#454545]">
                         <div class="flex items-center justify-between gap-2 mb-1">
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
-                                <span class="text-xs text-slate-500 dark:text-slate-400">${dateStr} ${timeStr}</span>
-                                <span class="text-xs text-slate-400 dark:text-slate-500">(${relativeTime})</span>
+                                <span class="text-xs text-slate-500 dark:text-[#969696]">${dateStr} ${timeStr}</span>
+                                <span class="text-xs text-slate-400 dark:text-[#858585]">(${relativeTime})</span>
                             </div>
                             <button type="button" onclick="viewCheckInHistory(${member.id}, '${member.full_name.replace(/'/g, "\\'")}')"
                                 class="px-2 py-0.5 bg-blue-500 text-white rounded text-xs font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap">
                                 History
                             </button>
                         </div>
-                        <p class="text-xs text-slate-600 dark:text-slate-300">${member.status || ''}</p>
+                        <p class="text-xs text-slate-600 dark:text-[#cccccc]">${member.status || ''}</p>
                     </div>
                 `;
             }
 
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                    <p class="font-bold text-slate-800 dark:text-slate-200">${member.full_name}</p>
-                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200">${memberLevel}</span>
+                    <p class="font-bold text-slate-800 dark:text-[#d4d4d4]">${member.full_name}</p>
+                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-[#3c3c3c] text-slate-800 dark:text-[#d4d4d4]">${memberLevel}</span>
                 </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">${member.email}</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">${member.phone_number || 'N/A'}</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${member.physical_address || 'N/A'}</p>
+                <p class="text-xs text-slate-500 dark:text-[#969696] mb-1">${member.email}</p>
+                <p class="text-xs text-slate-500 dark:text-[#969696]">${member.phone_number || 'N/A'}</p>
+                <p class="text-xs text-slate-500 dark:text-[#969696] mt-1">${member.physical_address || 'N/A'}</p>
                 ${checkinHTML}
             `;
             membersList.appendChild(div);
@@ -558,13 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
         historyList.innerHTML = '';
 
         if (checkins.length === 0) {
-            historyList.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-center">No check-in history</p>';
+            historyList.innerHTML = '<p class="text-slate-500 dark:text-[#969696] text-center">No check-in history</p>';
             return;
         }
 
         checkins.forEach(checkin => {
             const div = document.createElement('div');
-            div.className = 'p-3 bg-slate-100 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600';
+            div.className = 'p-3 bg-slate-100 dark:bg-[#3c3c3c] rounded border border-slate-200 dark:border-[#454545]';
 
             // Convert timestamp to local timezone
             let timestamp = checkin.timestamp;
@@ -583,9 +583,9 @@ document.addEventListener('DOMContentLoaded', () => {
             div.innerHTML = `
                 <div class="flex items-center gap-2 mb-2">
                     <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
-                    <span class="text-xs text-slate-600 dark:text-slate-300">${dateStr} ${timeStr}</span>
+                    <span class="text-xs text-slate-600 dark:text-[#cccccc]">${dateStr} ${timeStr}</span>
                 </div>
-                <p class="text-xs text-slate-600 dark:text-slate-300">${checkin.status || '(No message)'}</p>
+                <p class="text-xs text-slate-600 dark:text-[#cccccc]">${checkin.status || '(No message)'}</p>
             `;
             historyList.appendChild(div);
         });
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (post.tagName && post.tagName !== currentTag) return;
 
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 self-start max-w-[85%] animate-fade-in-up';
+        messageDiv.className = 'bg-white dark:bg-[#2d2d30] p-3 rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42] self-start max-w-[85%] animate-fade-in-up';
 
         // Ensure timestamp is treated as UTC if it's a bare SQLite timestamp string
         let timestamp = post.timestamp;
@@ -674,8 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messageDiv.innerHTML = `
             <p class="text-xs font-bold text-orange-600 dark:text-orange-400 mb-1">${post.userName}</p>
-            <p class="text-slate-800 dark:text-slate-200">${post.content}</p>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${dateString} ${timeString}</p>
+            <p class="text-slate-800 dark:text-[#d4d4d4]">${post.content}</p>
+            <p class="text-[10px] text-slate-400 dark:text-[#858585] mt-1">${dateString} ${timeString}</p>
         `;
 
         messageContainer.appendChild(messageDiv);
@@ -720,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameClass = 'font-bold text-orange-600 dark:text-orange-400';
             }
 
-            button.className = 'w-full text-left p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors mb-2';
+            button.className = 'w-full text-left p-4 bg-white dark:bg-[#2d2d30] rounded-lg shadow-sm border border-slate-200 dark:border-[#3e3e42] hover:bg-slate-50 dark:hover:bg-[#3c3c3c] transition-colors mb-2';
             button.onclick = () => openZone(tag.name);
 
             // Build unread badge if there are unread messages
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="flex items-start justify-between gap-2">
                     <div class="flex-1">
                         <span class="${nameClass}">${tag.name}</span>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">${tag.description || ''}</p>
+                        <p class="text-xs text-slate-500 dark:text-[#969696]">${tag.description || ''}</p>
                     </div>
                     ${unreadBadge}
                 </div>
@@ -751,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const headerColors = [
             'bg-green-700', 'dark:bg-green-800',
             'bg-indigo-700', 'bg-red-700', 'bg-orange-600', 'bg-amber-500', 'bg-emerald-600', 'bg-slate-700',
-            'dark:bg-indigo-900', 'dark:bg-red-900', 'dark:bg-orange-800', 'dark:bg-amber-600', 'dark:bg-emerald-800', 'dark:bg-slate-800'
+            'dark:bg-indigo-900', 'dark:bg-red-900', 'dark:bg-orange-800', 'dark:bg-amber-600', 'dark:bg-emerald-800', 'dark:bg-[#2d2d30]'
         ];
         chatHeader.classList.remove(...headerColors);
 
@@ -862,19 +862,19 @@ document.addEventListener('DOMContentLoaded', () => {
         adminUserList.innerHTML = '';
         users.forEach(user => {
             const div = document.createElement('div');
-            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600';
+            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-[#3c3c3c] rounded border border-slate-200 dark:border-[#454545] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#454545]';
 
             const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
             const userLevel = levelNames[user.level] || `${user.level} Unknown`;
 
             div.innerHTML = `
                 <div class="flex-1">
-                    <p class="font-bold text-slate-800 dark:text-slate-200">${user.full_name}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.email}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">${user.phone_number || 'N/A'}</p>
+                    <p class="font-bold text-slate-800 dark:text-[#d4d4d4]">${user.full_name}</p>
+                    <p class="text-xs text-slate-500 dark:text-[#969696]">${user.email}</p>
+                    <p class="text-xs text-slate-500 dark:text-[#969696]">${user.phone_number || 'N/A'}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200">${userLevel}</span>
+                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-[#3c3c3c] text-slate-800 dark:text-[#d4d4d4]">${userLevel}</span>
                     <button onclick="openUserEdit(${user.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
                 </div>
             `;
@@ -985,7 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adminZoneList.innerHTML = '';
         zones.forEach(zone => {
             const div = document.createElement('div');
-            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600';
+            div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-[#3c3c3c] rounded border border-slate-200 dark:border-[#454545] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#454545]';
 
             let hazardClass = 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
             if (zone.hazard_level === 'yellow') {
@@ -998,8 +998,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             div.innerHTML = `
                 <div class="flex-1">
-                    <p class="font-bold text-slate-800 dark:text-slate-200">${zone.name}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">${zone.description || 'No description'}</p>
+                    <p class="font-bold text-slate-800 dark:text-[#d4d4d4]">${zone.name}</p>
+                    <p class="text-xs text-slate-500 dark:text-[#969696]">${zone.description || 'No description'}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${hazardClass}">${zone.hazard_level || 'green'}</span>
