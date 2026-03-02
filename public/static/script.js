@@ -76,26 +76,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const dash = document.getElementById('dashboard');
         if (!dash) return;
 
-        const members = Number(data.members_count ?? data.members ?? 0);
-        const help = Number(data.help_count ?? data.help ?? 0);
-        const alerts = Number(data.non_green_count ?? data.alerts ?? 0);
+        const totalOnline = Number(data.total_online ?? data.members_count ?? 0);
+        const recentlyOk = Number(data.recently_ok ?? 0);
+        const helpAlerts = Number(data.help_alerts ?? data.help_count ?? 0);
+        const zoneAlerts = Number(data.zone_alerts ?? data.non_green_count ?? 0);
 
+        const statOkEl = document.getElementById('stat-ok');
         const membersEl = document.getElementById('stat-members');
         const helpEl = document.getElementById('stat-help');
         const alertsEl = document.getElementById('stat-alerts');
 
         // Update numbers
-        if (membersEl) membersEl.textContent = String(members);
-        if (helpEl) helpEl.textContent = String(help);
-        if (alertsEl) alertsEl.textContent = String(alerts);
+        if (statOkEl) {
+            statOkEl.textContent = String(recentlyOk);
+            // If recently_ok is less than 20% of total_online, change color to amber (stale data warning)
+            if (totalOnline > 0 && recentlyOk < totalOnline * 0.2) {
+                statOkEl.className = 'text-lg font-black text-amber-500 dark:text-amber-400';
+            } else {
+                statOkEl.className = 'text-lg font-black text-emerald-600 dark:text-emerald-400';
+            }
+        }
+        if (membersEl) membersEl.textContent = String(totalOnline);
+        if (helpEl) helpEl.textContent = String(helpAlerts);
+        if (alertsEl) alertsEl.textContent = String(zoneAlerts);
 
-        if (help > 0) {
+        // Apply dashboard-level styling based on alerts
+        if (helpAlerts > 0) {
+            // Red alert with pulse animation
             dash.classList.replace('bg-emerald-50/50', 'bg-red-50/80');
             dash.classList.replace('border-emerald-500', 'border-red-600');
             dash.classList.replace('dark:bg-emerald-950/20', 'dark:bg-red-900/30');
             dash.classList.replace('dark:border-emerald-500', 'dark:border-red-500');
-            dash.classList.add('animate-pulse');
+            if (!dash.classList.contains('animate-pulse')) {
+                dash.classList.add('animate-pulse');
+            }
+        } else if (zoneAlerts > 0) {
+            // Solid red border but no pulse
+            dash.classList.replace('bg-emerald-50/50', 'bg-red-50/80');
+            dash.classList.replace('border-emerald-500', 'border-red-600');
+            dash.classList.replace('dark:bg-emerald-950/20', 'dark:bg-red-900/30');
+            dash.classList.replace('dark:border-emerald-500', 'dark:border-red-500');
+            dash.classList.remove('animate-pulse');
         } else {
+            // Green normal state
             dash.classList.replace('bg-red-50/80', 'bg-emerald-50/50');
             dash.classList.replace('border-red-600', 'border-emerald-500');
             dash.classList.replace('dark:bg-red-900/30', 'dark:bg-emerald-950/20');

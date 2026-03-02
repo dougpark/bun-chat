@@ -38,14 +38,25 @@ async function verifySignature(value: string, signature: string) {
 }
 
 interface DashboardStats {
-    members_count: number;
-    help_count: number;
-    non_green_count: number;
+    total_online: number;
+    recently_ok: number;
+    help_alerts: number;
+    zone_alerts: number;
 }
 
 function getDashboardStats(): DashboardStats {
-    const members = db.query(`SELECT COUNT(*) as count FROM users`).get() as { count: number } | null;
+    // Total registered users (or online users if you track connections)
+    const totalOnline = db.query(`SELECT COUNT(*) as count FROM users`).get() as { count: number } | null;
 
+    // Users who checked in as 'ok' (status_id = 0) within the last 60 minutes
+    const recentlyOk = db.query(`
+        SELECT COUNT(*) as count
+        FROM checkins
+        WHERE status_id = 0
+        AND datetime(timestamp) > datetime('now', '-1 hour')
+    `).get() as { count: number } | null;
+
+    // Active help requests: users whose latest check-in is status_id = 1 (help)
     const activeHelp = db.query(`
         SELECT COUNT(*) as count
         FROM (
@@ -60,6 +71,7 @@ function getDashboardStats(): DashboardStats {
         )
     `).get() as { count: number } | null;
 
+    // Zones with non-green status
     const nonGreenZones = db.query(`
         SELECT COUNT(*) as count
         FROM tags
@@ -67,9 +79,10 @@ function getDashboardStats(): DashboardStats {
     `).get() as { count: number } | null;
 
     return {
-        members_count: members?.count ?? 0,
-        help_count: activeHelp?.count ?? 0,
-        non_green_count: nonGreenZones?.count ?? 0,
+        total_online: totalOnline?.count ?? 0,
+        recently_ok: recentlyOk?.count ?? 0,
+        help_alerts: activeHelp?.count ?? 0,
+        zone_alerts: nonGreenZones?.count ?? 0,
     };
 }
 
@@ -478,6 +491,14 @@ const server = Bun.serve<WebSocketData>({
                     $id: tagId
                 } as any);
 
+                // Publish dashboard update after zone status change
+                try {
+                    const stats = getDashboardStats();
+                    server.publish("dashboard", JSON.stringify({ type: "DASHBOARD_UPDATE", ...stats }));
+                } catch (error) {
+                    console.error("Error publishing dashboard stats after zone update:", error);
+                }
+
                 return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
             } catch (e: any) {
                 return new Response(JSON.stringify({ error: e.message }), { status: 500 });
@@ -591,6 +612,14 @@ const server = Bun.serve<WebSocketData>({
                     $status_id: status_id,
                     $status: status
                 } as any);
+
+                // Publish dashboard update after check-in
+                try {
+                    const stats = getDashboardStats();
+                    server.publish("dashboard", JSON.stringify({ type: "DASHBOARD_UPDATE", ...stats }));
+                } catch (error) {
+                    console.error("Error publishing dashboard stats after check-in:", error);
+                }
 
                 return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
             } catch (e: any) {
