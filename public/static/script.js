@@ -50,13 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ========== ICONS ========== //
 
-    // insert svg icons into DOM at placeholders
+    // insert svg icons into DOM at
 
     const initIcons = () => {
         const inject = (selector, iconHtml) => {
             document.querySelectorAll(selector).forEach(el => el.innerHTML = iconHtml);
         };
 
+        inject('.icon-shield', ICONS.shield);
         inject('.icon-back', ICONS.back);
         inject('.icon-send', ICONS.send);
         inject('.icon-home', ICONS.home);
