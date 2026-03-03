@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res.ok) {
                         const members = await res.json();
                         allMembers = members;
-                        renderMembersList(members);
+                        applyMembersFilters();
                     } else {
                         alert('Failed to fetch members');
                     }
@@ -645,10 +645,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function applyMembersFilters() {
-        const term = membersFilter.value.toLowerCase();
+        if (!membersFilter) {
+            renderMembersList(allMembers);
+            return;
+        }
+
+        const term = (membersFilter.value || '').toLowerCase().trim();
         const filtered = allMembers.filter(m => {
-            const matchesSearch = m.full_name.toLowerCase().includes(term) || m.email.toLowerCase().includes(term);
-            const matchesHelpStatus = !showOnlyHelpNeeded || m.status_id === 1;
+            const fullName = String(m.full_name ?? '').toLowerCase();
+            const email = String(m.email ?? '').toLowerCase();
+            const matchesSearch = !term || fullName.includes(term) || email.includes(term);
+            const matchesHelpStatus = !showOnlyHelpNeeded || Number(m.status_id) === 1;
             return matchesSearch && matchesHelpStatus;
         });
         renderMembersList(filtered);
