@@ -48,13 +48,13 @@ export const WEATHER_LEVELS = {
         name: 'Inclement',
         description: 'Rain, light snow, or wind; requires caution.',
         severity: 2, // Yellow
-        icon: 'cloud-rain'
+        icon: 'cloudrain'
     },
     3: {
         name: 'Severe',
         description: 'Thunderstorms, heavy snow, or high winds.',
         severity: 3, // Orange
-        icon: 'cloud-lightning'
+        icon: 'cloudlightning'
     },
     4: {
         name: 'Extreme',
