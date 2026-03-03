@@ -12,8 +12,7 @@ db.run(`
     email TEXT UNIQUE,
     password_hash TEXT,
     level INTEGER DEFAULT 0, -- access level: 0=regular user, 1=member, 2=zone admin, 3=system admin
-    is_verified BOOLEAN DEFAULT FALSE, -- deprecated, use level instead
-    role TEXT DEFAULT 'user' -- 'user' or 'admin' -- deprecated, use level instead
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
 
@@ -26,6 +25,9 @@ try {
 } catch (e) { }
 try {
   db.run("ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 0");
+} catch (e) { }
+try {
+  db.run("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
 } catch (e) { }
 
 db.run(`
@@ -150,6 +152,6 @@ db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_c
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#South Zone', 'South of Main',  3, 'Admin', 1, 4);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Zone Admin', 'Zone discussion',  1, 'Admin', 2, 1);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Sys Admin', 'System discussion', 1, 'Admin', 3, 1);`);
-db.run(`INSERT OR IGNORE INTO users (full_name, phone_number, physical_address, is_verified,  level) VALUES ('Test User', '555-123-4567', '123 Main St', TRUE,  3);`);
+db.run(`INSERT OR IGNORE INTO users (full_name, phone_number, physical_address,  level) VALUES ('Test User', '555-123-4567', '123 Main St',  3);`);
 
 export { db };
