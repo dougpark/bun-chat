@@ -599,28 +599,29 @@
         <!-- Bottom Nav (Persistent) -->
         <nav
             class="absolute bottom-0 left-0 right-0 z-30 flex justify-around bg-white dark:bg-vsdark-secondary border-t border-slate-200 dark:border-vsdark-border py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16">
-            <button onclick="goHome()" class="flex flex-col items-center text-orange-500 dark:text-orange-400">
+            <button onclick="goHome()"
+                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
                 <span class="icon-home"></span>
                 <span class="text-[10px] font-bold">Home</span>
             </button>
             <button onclick="openCheckIn()"
-                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text0 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
                 <span class="icon-bell"></span>
                 <span class="text-[10px] font-bold">Check In</span>
             </button>
             <button onclick="openMembers()"
-                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text0 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
                 <span class="icon-users"></span>
                 <span class="text-[10px] font-bold">Members</span>
             </button>
 
             <button onclick="openSettings()"
-                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text0 hover:text-orange-500 dark:hover:text-orange-400">
+                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
                 <span class="icon-settings"></span>
                 <span class="text-[10px] font-bold">Settings</span>
             </button>
             <button id="nav-admin" onclick="openAdmin()"
-                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text0 hover:text-orange-500 dark:hover:text-orange-400 hidden">
+                class="flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text hidden">
                 <span class="icon-admin"></span>
                 <span class="text-[10px] font-bold">Admin</span>
             </button>
