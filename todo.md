@@ -1,9 +1,9 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-* done - member list count of help status
+* 
 * check-in history table and user and admin updates and close
-* done - if any help then show banner on top of home with button to member list
+* 
 * reactions to a post - up, down, seen, done
 * level >=2 public message in dashboard from admin menu
 
@@ -34,6 +34,8 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 
 
 ### Completed
+done - if any help then show banner on top of home with button to member list
+done - member list count of help status
 
 * done - admin verify a user
 * done - Implement user-access levels

@@ -151,11 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
             statOkEl.textContent = String(recentlyOk);
             // If recently_ok is less than 20% of total_online, change color to amber (stale data warning)
             if (totalOnline > 0 && recentlyOk < totalOnline * 0.2) {
-                statOkEl.className = 'text-lg font-black text-amber-500 dark:text-amber-400';
+                statOkEl.className = 'text-lg font-black text-vsdark-active5 dark:vsdark-active5';
             } else {
-                statOkEl.className = 'text-lg font-black text-emerald-600 dark:text-emerald-400';
+                statOkEl.className = 'text-lg font-black text-green-600 dark:text-green-400';
             }
         }
+        statOkEl.className = 'text-lg font-black text-slate-100 dark:text-vsdark-text';
         if (membersEl) membersEl.textContent = String(totalOnline);
         if (helpEl) helpEl.textContent = String(helpAlerts);
         if (alertsEl) alertsEl.textContent = String(zoneAlerts);
@@ -240,6 +241,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         navigationStack.push(viewName);
 
+        // Update active nav button state
+        updateNavButtonStates(viewName);
+
         // Call any callbacks tied to this navigation
         if (options.onNavigate) {
             options.onNavigate();
@@ -270,11 +274,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 views[previous].el.classList.remove('translate-x-full');
                 views[previous].el.classList.add('translate-x-0');
             }
+
+            // Update active nav button state
+            updateNavButtonStates(previous);
         }
     }
 
     // Initialize home view as starting point
     navigationStack.push('home');
+
+    // Map viewNames to nav button IDs for active state styling
+    const navButtonMap = {
+        home: 'nav-home',
+        checkin: 'nav-checkin',
+        members: 'nav-members',
+        settings: 'nav-settings',
+        admin: 'nav-admin'
+    };
+
+    // Update nav button active states
+    function updateNavButtonStates(currentView) {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('text-orange-500', 'dark:text-vsdark-text');
+            btn.classList.add('text-slate-400', 'dark:text-vsdark-text-secondary');
+        });
+
+        const activeButtonId = navButtonMap[currentView];
+        if (activeButtonId) {
+            const activeBtn = document.getElementById(activeButtonId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400', 'dark:text-vsdark-text-secondary');
+                activeBtn.classList.add('text-orange-500', 'dark:text-vsdark-text');
+            }
+        }
+    }
+
     // ========== END NAVIGATION SYSTEM ==========
 
     let currentTag = '#general';
@@ -317,6 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Call immediately
     checkAuth();
+
+    // Set initial nav button state for home view
+    updateNavButtonStates('home');
 
     window.toggleAuthMode = (mode) => {
         authError.classList.add('hidden');
@@ -613,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="text-xs text-slate-400 dark:text-vsdark-text-muted">(${relativeTime})</span>
                             </div>
                             <button type="button" onclick="viewCheckInHistory(${member.id}, '${member.full_name.replace(/'/g, "\\'")}')"
-                                class="px-2 py-0.5 bg-blue-500 text-white rounded text-xs font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap">
+                                class="px-2 py-0.5 bg-vsdark-active5 text-white rounded text-xs font-semibold hover:bg-vsdark-active1 transition-colors whitespace-nowrap">
                                 History
                             </button>
                         </div>
@@ -976,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateString = dateObj.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
 
         messageDiv.innerHTML = `
-            <p class="text-xs font-bold text-orange-600 dark:text-orange-400 mb-1">${post.userName}</p>
+            <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1 mb-1">${post.userName}</p>
             <p class="text-slate-800 dark:text-vsdark-text">${post.content}</p>
             <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
         `;
@@ -1012,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const zoneLevel = ZONE_LEVELS[tag.hazard_level_id] || ZONE_LEVELS[1];
 
             // Base text color
-            let nameClass = 'font-bold text-orange-600 dark:text-orange-400';
+            let nameClass = 'font-bold text-orange-600 dark:text-vsdark-active1';
 
             // Apply colors based on hazard level id
             if (zoneLevel.color === 'emerald') {
@@ -1178,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-vsdark-input text-slate-800 dark:text-vsdark-text">${userLevel}</span>
-                    <button onclick="openUserEdit(${user.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
+                    <button onclick="openUserEdit(${user.id})" class="px-3 py-1 bg-vsdark-active5 text-white rounded text-xs font-bold hover:bg-vsdark-active1">Edit</button>
                 </div>
             `;
             adminUserList.appendChild(div);
@@ -1311,7 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${hazardClass}">${zoneLevel.label}</span>
-                    <button onclick="openZoneEdit(${zone.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
+                    <button onclick="openZoneEdit(${zone.id})" class="px-3 py-1 bg-vsdark-active5 text-white rounded text-xs font-bold hover:bg-vsdark-active1">Edit</button>
                 </div>
             `;
             adminZoneList.appendChild(div);
