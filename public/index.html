@@ -38,7 +38,7 @@
         <div id="view-auth"
             class="absolute inset-0 bg-white dark:bg-vsdark-secondary z-50 flex flex-col items-center justify-center p-6 hidden">
 
-            <h1 class="text-3xl font-bold text-orange-500 dark:text-orange-400 mb-8">Bun Chat</h1>
+            <h1 class="text-3xl font-bold text-orange-500 dark:text-vsdark-text mb-8">Bun Chat</h1>
 
             <!-- Login Form -->
             <form id="login-form" class="w-full max-w-sm space-y-4">
@@ -82,7 +82,7 @@
         <!-- View 1: Home / Directory -->
         <div id="view-home"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-10 transition-transform duration-300 ease-in-out transform translate-x-0 pb-16">
-            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
 
                 <h1 class="text-xl font-bold">Emergency Chat</h1>
                 <div id="dashboard"
@@ -168,7 +168,7 @@
         <!-- View 3: Settings (Initially off-screen) -->
         <div id="view-settings"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
                 <h1 class="text-xl font-bold">Settings</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -210,7 +210,7 @@
         <div id="view-profile"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex items-center gap-2">
                 <button onclick="openSettings()"
                     class="text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
                     <span class="icon-back"></span>
@@ -268,7 +268,7 @@
         <!-- View 5: Admin Nav (Initially off-screen) -->
         <div id="view-admin-nav"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
                 <h1 class="text-xl font-bold">Administration</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col justify-center items-center">
@@ -289,7 +289,7 @@
         <div id="view-admin"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="openAdmin()"
                         class="mr-2 text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
@@ -315,7 +315,7 @@
         <div id="view-admin-zones"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="openAdmin()"
                         class="mr-2 text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
@@ -341,7 +341,7 @@
         <div id="view-zone-edit"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="closeZoneEdit()"
                         class="mr-2 text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
@@ -415,7 +415,7 @@
         <div id="view-user-edit"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex justify-between items-center">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-textp-4 shadow-md flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <button onclick="closeUserEdit()"
                         class="mr-2 text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
@@ -476,7 +476,7 @@
         <!-- View 10: Members (Initially off-screen) -->
         <div id="view-members"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
                 <h1 class="text-xl font-bold">Members</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -501,7 +501,7 @@
         <div id="view-checkin-history"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header
-                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md flex items-center gap-2">
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex items-center gap-2">
                 <button onclick="openMembers()"
                     class="text-slate-500 dark:text-vsdark-text-secondary hover:text-orange-500">
                     <span class="icon-back"></span>
@@ -543,7 +543,7 @@
         <!-- View 6: Check In -->
         <div id="view-checkin"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
-            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-orange-400 p-4 shadow-md">
+            <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
                 <h1 class="text-xl font-bold">Check In</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 flex flex-col justify-start gap-8">

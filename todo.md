@@ -5,6 +5,7 @@
 * check-in history table and user and admin updates and close
 * done - if any help then show banner on top of home with button to member list
 * reactions to a post - up, down, seen, done
+* level >=2 public message in dashboard from admin menu
 
 ### Optimization Tasks
 * In your renderMessage function, check how many messages are in the container. If it's over 200, remove the oldest one before adding the newest one.
