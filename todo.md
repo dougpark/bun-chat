@@ -1,9 +1,9 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-* member list count of help status
-* claim a help and track status updates, clear help
-* if any help then show banner on top of home with button to member list
+* done - member list count of help status
+* check-in history table and user and admin updates and close
+* done - if any help then show banner on top of home with button to member list
 * reactions to a post - up, down, seen, done
 
 ### Optimization Tasks

@@ -57,35 +57,7 @@ try {
   db.run("ALTER TABLE tags ADD COLUMN hazard_level_id INTEGER DEFAULT 1");
 } catch (e) { }
 
-// Migrate legacy weather text values into weather_id where possible
-try {
-  db.run(`
-    UPDATE tags
-    SET weather_id = CASE LOWER(COALESCE(weather, ''))
-      WHEN 'fair' THEN 1
-      WHEN 'inclement' THEN 2
-      WHEN 'severe' THEN 3
-      WHEN 'extreme' THEN 4
-      ELSE COALESCE(weather_id, 1)
-    END
-    WHERE weather IS NOT NULL
-  `);
-} catch (e) { }
 
-// Migrate legacy hazard_level text values into hazard_level_id where possible
-try {
-  db.run(`
-    UPDATE tags
-    SET hazard_level_id = CASE LOWER(COALESCE(hazard_level, ''))
-      WHEN 'green' THEN 1
-      WHEN 'yellow' THEN 2
-      WHEN 'orange' THEN 3
-      WHEN 'red' THEN 4
-      ELSE COALESCE(hazard_level_id, 1)
-    END
-    WHERE hazard_level IS NOT NULL
-  `);
-} catch (e) { }
 
 // Remove legacy columns when SQLite version supports DROP COLUMN
 try {
@@ -107,18 +79,18 @@ db.run(`
   );
 `);
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tag_id INTEGER,
-    description TEXT NOT NULL,
-    priority TEXT DEFAULT 'medium',
-    assigned_to_user_id INTEGER,
-    status TEXT DEFAULT 'pending',
-    FOREIGN KEY (tag_id) REFERENCES tags(id),
-    FOREIGN KEY (assigned_to_user_id) REFERENCES users(id)
-  );
-`);
+// db.run(`
+//   CREATE TABLE IF NOT EXISTS tasks (
+//     id INTEGER PRIMARY KEY AUTOINCREMENT,
+//     tag_id INTEGER,
+//     description TEXT NOT NULL,
+//     priority TEXT DEFAULT 'medium',
+//     assigned_to_user_id INTEGER,
+//     status TEXT DEFAULT 'pending',
+//     FOREIGN KEY (tag_id) REFERENCES tags(id),
+//     FOREIGN KEY (assigned_to_user_id) REFERENCES users(id)
+//   );
+// `);
 
 // checkins table to track user check-ins with location and status
 db.run(`
