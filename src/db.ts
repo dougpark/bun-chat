@@ -11,8 +11,8 @@ db.run(`
     physical_address TEXT NOT NULL,
     email TEXT UNIQUE,
     password_hash TEXT,
-    level INTEGER DEFAULT 0, -- security level: 0=regular user, 1=member, 2=zone admin, 3=system admin
-    is_verified BOOLEAN DEFAULT FALSE,
+    level INTEGER DEFAULT 0, -- access level: 0=regular user, 1=member, 2=zone admin, 3=system admin
+    is_verified BOOLEAN DEFAULT FALSE, -- deprecated, use level instead
     role TEXT DEFAULT 'user' -- 'user' or 'admin' -- deprecated, use level instead
   );
 `);
@@ -43,7 +43,7 @@ db.run(`
     name TEXT NOT NULL UNIQUE,
     description TEXT,
     hazard_level_id INTEGER DEFAULT 1, -- 1=Green - Clear, 2=Yellow - Caution, 3=Orange - Warning, 4=Red - Danger
-    level INTEGER DEFAULT 0, -- security level: 0=regular user, 1=member, 2=zone admin, 3=system admin
+    level INTEGER DEFAULT 0, -- access level: 0=regular user, 1=member, 2=zone admin, 3=system admin
     weather_id INTEGER DEFAULT 1, -- 1=Clear, 2=Inclement, 3=Severe, 4=Extreme
     person_in_charge TEXT
   );
