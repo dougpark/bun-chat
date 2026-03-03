@@ -5,28 +5,24 @@
 export const ZONE_LEVELS = {
     1: {
         label: 'Clear',
-        weather: 'Fair',
         color: 'emerald',
         hex: '#10b981',
         description: 'Conditions are normal'
     },
     2: {
         label: 'Caution',
-        weather: 'Inclement',
         color: 'amber',
         hex: '#f59e0b',
         description: 'Minor issues, proceed with care'
     },
     3: {
         label: 'Warning',
-        weather: 'Severe',
         color: 'orange',
         hex: '#f97316',
         description: 'Significant disruption'
     },
     4: {
         label: 'Danger',
-        weather: 'Extreme',
         color: 'red',
         hex: '#ef4444',
         description: 'Life safety threat'

@@ -371,12 +371,9 @@
                             <label
                                 class="block text-sm font-medium text-slate-700 dark:text-vsdark-text-dim mb-1">Hazard
                                 Level</label>
-                            <select id="zone-hazard-level-input" name="hazard_level"
+                            <select id="zone-hazard-level-id-input" name="hazard_level_id"
                                 class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
-                                <option value="green">Green</option>
-                                <option value="yellow">Yellow</option>
-                                <option value="orange">Orange</option>
-                                <option value="red">Red</option>
+                                <!-- Options populated dynamically from ZONE_LEVELS -->
                             </select>
                         </div>
                         <div>
@@ -385,17 +382,16 @@
                                 Level</label>
                             <select id="zone-level-input" name="level"
                                 class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
-                                <option value="0">0 Unverified</option>
-                                <option value="1">1 Verified</option>
-                                <option value="2">2 Zone Admin</option>
-                                <option value="3">3 System Admin</option>
+                                <!-- Options populated dynamically from USER_LEVELS -->
                             </select>
                         </div>
                         <div>
                             <label
                                 class="block text-sm font-medium text-slate-700 dark:text-vsdark-text-dim mb-1">Weather</label>
-                            <input type="text" id="zone-weather-input" name="weather"
+                            <select id="zone-weather-id-input" name="weather_id"
                                 class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
+                                <!-- Options populated dynamically from WEATHER_LEVELS -->
+                            </select>
                         </div>
                         <div>
                             <label
@@ -464,10 +460,7 @@
                                 Level</label>
                             <select id="user-level-input" name="level"
                                 class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
-                                <option value="0">0 Unverified</option>
-                                <option value="1">1 Verified</option>
-                                <option value="2">2 Zone Admin</option>
-                                <option value="3">3 System Admin</option>
+                                <!-- Options populated dynamically from USER_LEVELS -->
                             </select>
                         </div>
                         <div class="pt-2">

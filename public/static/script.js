@@ -76,6 +76,61 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run it immediately
     initIcons();
 
+    // ========== POPULATE LEVEL DROPDOWNS ========== //
+    const initLevelDropdowns = () => {
+        const zoneLevelSelect = document.getElementById('zone-level-input');
+        const userLevelSelect = document.getElementById('user-level-input');
+
+        // Populate both dropdowns with USER_LEVELS
+        [zoneLevelSelect, userLevelSelect].forEach(select => {
+            if (select) {
+                // Clear existing options
+                select.innerHTML = '';
+
+                // Add options from USER_LEVELS constant
+                Object.keys(USER_LEVELS).forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level;
+                    option.textContent = `${level} ${USER_LEVELS[level].label}`;
+                    select.appendChild(option);
+                });
+            }
+        });
+    };
+
+    const initHazardDropdown = () => {
+        const hazardSelect = document.getElementById('zone-hazard-level-id-input');
+        if (!hazardSelect) return;
+
+        hazardSelect.innerHTML = '';
+
+        Object.keys(ZONE_LEVELS).forEach(levelId => {
+            const option = document.createElement('option');
+            option.value = levelId;
+            option.textContent = `${levelId} ${ZONE_LEVELS[levelId].label}`;
+            hazardSelect.appendChild(option);
+        });
+    };
+
+    const initWeatherDropdown = () => {
+        const weatherSelect = document.getElementById('zone-weather-id-input');
+        if (!weatherSelect) return;
+
+        weatherSelect.innerHTML = '';
+
+        Object.keys(WEATHER_LEVELS).forEach(weatherId => {
+            const option = document.createElement('option');
+            option.value = weatherId;
+            option.textContent = `${weatherId} ${WEATHER_LEVELS[weatherId].name}`;
+            weatherSelect.appendChild(option);
+        });
+    };
+
+    // Run it immediately
+    initLevelDropdowns();
+    initHazardDropdown();
+    initWeatherDropdown();
+
     // ========== Dashboard Update Logic ========== //
     function updateDashboard(data) {
         const dash = document.getElementById('dashboard');
@@ -317,14 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update Level Display
                 const levelDisplay = document.getElementById('profile-level-display');
                 if (levelDisplay) {
-                    const levels = {
-                        0: 'Unverified',
-                        1: 'Verified',
-                        2: 'Zone Admin',
-                        3: 'System Admin'
-                    };
                     const level = user.level || 0;
-                    levelDisplay.textContent = `${level} - ${levels[level] || 'Unknown'}`;
+                    const levelLabel = USER_LEVELS[level]?.label || 'Unknown';
+                    levelDisplay.textContent = `${level} - ${levelLabel}`;
                 }
             }
         } catch (e) {
@@ -430,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If already viewing a tag, update the header in case its level changed
                 if (currentTag) {
                     const tag = allTags.find(t => t.name === currentTag);
-                    if (tag) updateHeaderStyle(tag.hazard_level);
+                    if (tag) updateHeaderStyle(tag.hazard_level_id);
                 }
             } else if (data.type === 'DASHBOARD_UPDATE') {
                 updateDashboard(data);
@@ -455,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTagName.textContent = tagName;
 
         const tag = allTags.find(t => t.name === tagName);
-        if (tag) updateHeaderStyle(tag.hazard_level);
+        if (tag) updateHeaderStyle(tag.hazard_level_id);
 
         // Clear previous messages
         messageContainer.innerHTML = '';
@@ -514,8 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'p-3 bg-white dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
 
-            const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
-            const memberLevel = levelNames[member.level] || `${member.level} Unknown`;
+            const memberLevel = USER_LEVELS[member.level]?.label
+                ? `${member.level} ${USER_LEVELS[member.level].label}`
+                : `${member.level} Unknown`;
 
             // Format check-in info if available
             let checkinHTML = '';
@@ -944,17 +995,19 @@ document.addEventListener('DOMContentLoaded', () => {
         tags.forEach(tag => {
             const button = document.createElement('button');
 
+            const zoneLevel = ZONE_LEVELS[tag.hazard_level_id] || ZONE_LEVELS[1];
+
             // Base text color
             let nameClass = 'font-bold text-orange-600 dark:text-orange-400';
 
-            // Apply colors based on hazard level if present
-            if (tag.hazard_level === 'green') {
+            // Apply colors based on hazard level id
+            if (zoneLevel.color === 'emerald') {
                 nameClass = 'font-bold text-green-600 dark:text-green-400';
-            } else if (tag.hazard_level === 'red') {
+            } else if (zoneLevel.color === 'red') {
                 nameClass = 'font-bold text-red-600 dark:text-red-400';
-            } else if (tag.hazard_level === 'yellow') {
+            } else if (zoneLevel.color === 'amber') {
                 nameClass = 'font-bold text-amber-600 dark:text-amber-400';
-            } else if (tag.hazard_level === 'orange') {
+            } else if (zoneLevel.color === 'orange') {
                 nameClass = 'font-bold text-orange-600 dark:text-orange-400';
             }
 
@@ -981,9 +1034,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Helper: Update Header Style based on Hazard Level
-    function updateHeaderStyle(level) {
+    function updateHeaderStyle(levelId) {
         if (!chatHeader || !hazardBar) return;
-        level = (level || 'green').toLowerCase();
+        const zoneLevel = ZONE_LEVELS[Number(levelId) || 1] || ZONE_LEVELS[1];
 
         // Remove existing colors first
         const headerColors = [
@@ -995,32 +1048,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let headerBg, headerBgDark, barBg, barBorder, barText;
 
-        if (level === 'red') {
+        if (zoneLevel.color === 'red') {
             headerBg = 'bg-red-700';
             headerBgDark = 'dark:bg-red-900';
             barBg = 'bg-white/20';
             barBorder = 'border-white/30';
-            barText = 'Hazard Level: Danger (Red)';
-        } else if (level === 'orange') {
+        } else if (zoneLevel.color === 'orange') {
             headerBg = 'bg-orange-600';
             headerBgDark = 'dark:bg-orange-800';
             barBg = 'bg-white/20';
             barBorder = 'border-white/30';
-            barText = 'Hazard Level: Warning (Orange)';
-        } else if (level === 'yellow') {
+        } else if (zoneLevel.color === 'amber') {
             headerBg = 'bg-amber-500';
             headerBgDark = 'dark:bg-amber-600';
             barBg = 'bg-black/10';
             barBorder = 'border-black/20';
-            barText = 'Hazard Level: Caution (Yellow)';
         } else {
-            // Default Green
+            // Default Clear
             headerBg = 'bg-green-700';
             headerBgDark = 'dark:bg-green-800';
             barBg = 'bg-emerald-500/20';
             barBorder = 'border-emerald-500/30';
-            barText = 'Hazard Level: Clear (Green)';
         }
+        barText = `Hazard Level: ${zoneLevel.label}`;
 
         chatHeader.classList.add(headerBg, headerBgDark);
         hazardBar.className = `mt-2 text-xs p-1 rounded text-center border ${barBg} ${barBorder}`;
@@ -1102,8 +1152,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light cursor-pointer hover:bg-slate-100 dark:hover:bg-vsdark-border-light';
 
-            const levelNames = ['0 Unverified', '1 Verified', '2 Zone Admin', '3 System Admin'];
-            const userLevel = levelNames[user.level] || `${user.level} Unknown`;
+            const userLevel = USER_LEVELS[user.level]?.label
+                ? `${user.level} ${USER_LEVELS[user.level].label}`
+                : `${user.level} Unknown`;
 
             div.innerHTML = `
                 <div class="flex-1">
@@ -1225,22 +1276,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light cursor-pointer hover:bg-slate-100 dark:hover:bg-vsdark-border-light';
 
+            const zoneLevel = ZONE_LEVELS[zone.hazard_level_id] || ZONE_LEVELS[1];
+
             let hazardClass = 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
-            if (zone.hazard_level === 'yellow') {
+            if (zoneLevel.color === 'amber') {
                 hazardClass = 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200';
-            } else if (zone.hazard_level === 'orange') {
+            } else if (zoneLevel.color === 'orange') {
                 hazardClass = 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200';
-            } else if (zone.hazard_level === 'red') {
+            } else if (zoneLevel.color === 'red') {
                 hazardClass = 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
             }
+
+            const weatherName = WEATHER_LEVELS[zone.weather_id]?.name || 'Unknown';
 
             div.innerHTML = `
                 <div class="flex-1">
                     <p class="font-bold text-slate-800 dark:text-vsdark-text">${zone.name}</p>
                     <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${zone.description || 'No description'}</p>
+                    <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary">Weather: ${weatherName}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-1 rounded text-xs font-semibold ${hazardClass}">${zone.hazard_level || 'green'}</span>
+                    <span class="px-2 py-1 rounded text-xs font-semibold ${hazardClass}">${zoneLevel.label}</span>
                     <button onclick="openZoneEdit(${zone.id})" class="px-3 py-1 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">Edit</button>
                 </div>
             `;
@@ -1260,9 +1316,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate form
         document.getElementById('zone-name-input').value = zone.name;
         document.getElementById('zone-description-input').value = zone.description || '';
-        document.getElementById('zone-hazard-level-input').value = zone.hazard_level || 'green';
+        document.getElementById('zone-hazard-level-id-input').value = String(zone.hazard_level_id || 1);
         document.getElementById('zone-level-input').value = zone.level || '0';
-        document.getElementById('zone-weather-input').value = zone.weather || '';
+        document.getElementById('zone-weather-id-input').value = String(zone.weather_id || 1);
         document.getElementById('zone-person-in-charge-input').value = zone.person_in_charge || '';
 
         navigateTo('zoneEdit');
@@ -1287,9 +1343,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = {
                 name: document.getElementById('zone-name-input').value,
                 description: document.getElementById('zone-description-input').value,
-                hazard_level: document.getElementById('zone-hazard-level-input').value,
+                hazard_level_id: parseInt(document.getElementById('zone-hazard-level-id-input').value),
                 level: parseInt(document.getElementById('zone-level-input').value),
-                weather: document.getElementById('zone-weather-input').value,
+                weather_id: parseInt(document.getElementById('zone-weather-id-input').value),
                 person_in_charge: document.getElementById('zone-person-in-charge-input').value
             };
 

@@ -11,9 +11,9 @@ db.run(`
     physical_address TEXT NOT NULL,
     email TEXT UNIQUE,
     password_hash TEXT,
-    level INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 0, -- security level: 0=regular user, 1=member, 2=zone admin, 3=system admin
     is_verified BOOLEAN DEFAULT FALSE,
-    role TEXT DEFAULT 'user' -- 'user' or 'admin'
+    role TEXT DEFAULT 'user' -- 'user' or 'admin' -- deprecated, use level instead
   );
 `);
 
@@ -42,10 +42,9 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
-    hazard_level TEXT DEFAULT 'green',
-    level INTEGER DEFAULT 1, -- 1=Green - Clear, 2=Yellow - Caution, 3=Orange - Warning, 4=Red - Danger
+    hazard_level_id INTEGER DEFAULT 1, -- 1=Green - Clear, 2=Yellow - Caution, 3=Orange - Warning, 4=Red - Danger
+    level INTEGER DEFAULT 0, -- security level: 0=regular user, 1=member, 2=zone admin, 3=system admin
     weather_id INTEGER DEFAULT 1, -- 1=Clear, 2=Inclement, 3=Severe, 4=Extreme
-    weather TEXT DEFAULT 'Clear',
     person_in_charge TEXT
   );
 `);
@@ -53,6 +52,45 @@ db.run(`
 try {
   db.run("ALTER TABLE tags ADD COLUMN weather_id INTEGER DEFAULT 1");
   db.run("ALTER TABLE tags ADD COLUMN level INTEGER DEFAULT 0");
+  db.run("ALTER TABLE tags ADD COLUMN hazard_level_id INTEGER DEFAULT 1");
+} catch (e) { }
+
+// Migrate legacy weather text values into weather_id where possible
+try {
+  db.run(`
+    UPDATE tags
+    SET weather_id = CASE LOWER(COALESCE(weather, ''))
+      WHEN 'fair' THEN 1
+      WHEN 'inclement' THEN 2
+      WHEN 'severe' THEN 3
+      WHEN 'extreme' THEN 4
+      ELSE COALESCE(weather_id, 1)
+    END
+    WHERE weather IS NOT NULL
+  `);
+} catch (e) { }
+
+// Migrate legacy hazard_level text values into hazard_level_id where possible
+try {
+  db.run(`
+    UPDATE tags
+    SET hazard_level_id = CASE LOWER(COALESCE(hazard_level, ''))
+      WHEN 'green' THEN 1
+      WHEN 'yellow' THEN 2
+      WHEN 'orange' THEN 3
+      WHEN 'red' THEN 4
+      ELSE COALESCE(hazard_level_id, 1)
+    END
+    WHERE hazard_level IS NOT NULL
+  `);
+} catch (e) { }
+
+// Remove legacy columns when SQLite version supports DROP COLUMN
+try {
+  db.run("ALTER TABLE tags DROP COLUMN weather");
+} catch (e) { }
+try {
+  db.run("ALTER TABLE tags DROP COLUMN hazard_level");
 } catch (e) { }
 
 db.run(`
@@ -107,11 +145,11 @@ db.run(`
 `);
 
 // Seed initial data (for demonstration)
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, weather_id, person_in_charge, level) VALUES ('#general','General discussion', 'green', 'Normal', 1, 'Admin', 0);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, weather_id, person_in_charge, level) VALUES ('#North Zone', 'North of Main', 'yellow', 'Normal', 2, 'Admin', 0);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, weather_id, person_in_charge, level) VALUES ('#South Zone', 'South of Main', 'red', 'Normal', 3, 'Admin', 1);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, weather_id, person_in_charge, level) VALUES ('#Zone Admin', 'Zone discussion', 'green', 'Normal', 1, 'Admin', 2);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description, hazard_level, weather, weather_id, person_in_charge, level) VALUES ('#Sys Admin', 'System discussion', 'green', 'Normal', 1, 'Admin', 3);`);
-db.run(`INSERT OR IGNORE INTO users (id, full_name, phone_number, physical_address, is_verified, role, level) VALUES (1, 'Test User', '555-123-4567', '123 Main St', TRUE, 'user', 3);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#North Zone', 'North of Main',  2, 'Admin', 0, 2);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#South Zone', 'South of Main',  3, 'Admin', 1, 4);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Zone Admin', 'Zone discussion',  1, 'Admin', 2, 1);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Sys Admin', 'System discussion', 1, 'Admin', 3, 1);`);
+db.run(`INSERT OR IGNORE INTO users (full_name, phone_number, physical_address, is_verified,  level) VALUES ('Test User', '555-123-4567', '123 Main St', TRUE,  3);`);
 
 export { db };

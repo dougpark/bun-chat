@@ -72,11 +72,11 @@ function getDashboardStats(): DashboardStats {
         )
     `).get() as { count: number } | null;
 
-    // Zones with non-green status
+    // Zones with non-clear status (hazard_level_id > 1)
     const nonGreenZones = db.query(`
         SELECT COUNT(*) as count
         FROM tags
-        WHERE LOWER(COALESCE(hazard_level, 'green')) <> 'green'
+        WHERE COALESCE(hazard_level_id, 1) > 1
     `).get() as { count: number } | null;
 
     return {
@@ -416,7 +416,14 @@ const server = Bun.serve<WebSocketData>({
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
             if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
-            const tags = db.query("SELECT * FROM tags ORDER BY name").all();
+            const tags = db.query(`
+                SELECT 
+                    t.*, 
+                    COALESCE(t.weather_id, 1) as weather_id,
+                    COALESCE(t.hazard_level_id, 1) as hazard_level_id
+                FROM tags t
+                ORDER BY t.name
+            `).all();
             return new Response(JSON.stringify(tags), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -441,11 +448,11 @@ const server = Bun.serve<WebSocketData>({
 
             try {
                 const body = await req.json() as any;
-                const { id, description, hazard_level, level } = body;
+                const { id, description, hazard_level_id, level } = body;
 
-                db.run("UPDATE tags SET description = $description, hazard_level = $hazard_level, level = $level WHERE id = $id", {
+                db.run("UPDATE tags SET description = $description, hazard_level_id = $hazard_level_id, level = $level WHERE id = $id", {
                     $description: description,
-                    $hazard_level: hazard_level,
+                    $hazard_level_id: parseInt(hazard_level_id),
                     $level: parseInt(level),
                     $id: id
                 } as any);
@@ -480,14 +487,14 @@ const server = Bun.serve<WebSocketData>({
 
             try {
                 const body = await req.json() as any;
-                const { name, description, hazard_level, level, weather, person_in_charge } = body;
+                const { name, description, hazard_level_id, level, weather_id, person_in_charge } = body;
 
-                db.run("UPDATE tags SET name = $name, description = $description, hazard_level = $hazard_level, level = $level, weather = $weather, person_in_charge = $person_in_charge WHERE id = $id", {
+                db.run("UPDATE tags SET name = $name, description = $description, hazard_level_id = $hazard_level_id, level = $level, weather_id = $weather_id, person_in_charge = $person_in_charge WHERE id = $id", {
                     $name: name,
                     $description: description,
-                    $hazard_level: hazard_level,
-                    $level: level,
-                    $weather: weather,
+                    $hazard_level_id: parseInt(hazard_level_id),
+                    $level: parseInt(level),
+                    $weather_id: parseInt(weather_id),
                     $person_in_charge: person_in_charge,
                     $id: tagId
                 } as any);
