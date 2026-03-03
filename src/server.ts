@@ -585,7 +585,57 @@ const server = Bun.serve<WebSocketData>({
             return new Response(JSON.stringify(checkins), { headers: { "Content-Type": "application/json" } });
         }
 
-        // Handle POST /api/checkin
+        // Handle PUT /api/admin/checkins/:id - Update checkin status/feedback (Admin only)
+        const adminCheckinsMatch = url.pathname.match(/^\/api\/admin\/checkins\/(\d+)$/);
+        if (adminCheckinsMatch && req.method === "PUT") {
+            const checkinId = parseInt(adminCheckinsMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden - Requires Zone Admin level" }), { status: 403 });
+
+            try {
+                const body = await req.json() as any;
+                const { status, status_id } = body;
+
+                // Update the checkin status and/or message
+                const updates: string[] = [];
+                const params: Record<string, any> = { $id: checkinId };
+
+                if (status !== undefined) {
+                    updates.push('status = $status');
+                    params.$status = status;
+                }
+
+                if (status_id !== undefined) {
+                    updates.push('status_id = $status_id');
+                    params.$status_id = status_id;
+                }
+
+                if (updates.length === 0) {
+                    return new Response(JSON.stringify({ error: "No updates provided" }), { status: 400 });
+                }
+
+                db.run(`UPDATE checkins SET ${updates.join(', ')} WHERE id = $id`, params as any);
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
         if (url.pathname === "/api/checkin" && req.method === "POST") {
             const cookies = getCookies(req);
             const sessionId = cookies["session_id"];

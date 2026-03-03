@@ -214,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allTags = [];
     // let allUsers = [];
     let currentUserLevel = 0;
+    let currentUserName = '';
     let allZones = [];
     let currentEditingZoneId = null;
     let allUsers = [];
@@ -229,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const user = await res.json();
                 currentUserLevel = user.level || 0;
+                currentUserName = user.name || 'Admin';
 
                 if ((user.level || 0) >= 2) {
                     navAdmin.classList.remove('hidden');
@@ -594,15 +596,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // View Check-in History
+    let currentViewingUserId = null;
+    let currentViewingUserLatestCheckin = null;
+
     window.viewCheckInHistory = async (userId, memberName) => {
+        // Track the viewing user for admin feedback
+        currentViewingUserId = userId;
+        currentViewingUserLatestCheckin = null;
+
         // Set member name
         document.getElementById('checkin-history-name').textContent = memberName;
+
+        // Show/hide admin feedback panel based on current user level
+        const feedbackPanel = document.getElementById('admin-feedback-panel');
+        const feedbackText = document.getElementById('admin-feedback-text');
+        const feedbackMessage = document.getElementById('feedback-message');
+
+        if (feedbackPanel) {
+            if (currentUserLevel >= 2) {
+                feedbackPanel.classList.remove('hidden');
+                feedbackText.value = '';
+                feedbackMessage.classList.add('hidden');
+            } else {
+                feedbackPanel.classList.add('hidden');
+            }
+        }
 
         // Fetch check-in history
         try {
             const res = await fetch(`/api/user/${userId}/checkins`);
             if (res.ok) {
                 const checkins = await res.json();
+                // Store the latest checkin for admin use
+                if (checkins.length > 0) {
+                    currentViewingUserLatestCheckin = checkins[0];
+                }
                 renderCheckInHistory(checkins);
             } else {
                 document.getElementById('checkin-history-list').innerHTML = '<p class="text-red-600 dark:text-red-400">Failed to load check-in history</p>';
@@ -625,31 +653,174 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         checkins.forEach(checkin => {
-            const div = document.createElement('div');
-            div.className = 'p-3 bg-slate-100 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
-
-            // Convert timestamp to local timezone
-            let timestamp = checkin.timestamp;
-            if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
-                timestamp = timestamp.replace(' ', 'T') + 'Z';
-            }
-            const checkinDate = new Date(timestamp);
-            const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
-            const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const statusBadgeClass = checkin.status_id === 0
-                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
-            const statusText = checkin.status_id === 0 ? 'OK' : 'Help';
-
-            div.innerHTML = `
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
-                    <span class="text-xs text-slate-600 dark:text-vsdark-text-dim">${dateStr} ${timeStr}</span>
-                </div>
-                <p class="text-xs text-slate-600 dark:text-vsdark-text-dim">${checkin.status || '(No message)'}</p>
-            `;
+            const div = createCheckInHistoryEntry(checkin);
             historyList.appendChild(div);
+        });
+    }
+
+    function createCheckInHistoryEntry(checkin) {
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-slate-100 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
+
+        // Convert timestamp to local timezone
+        let timestamp = checkin.timestamp;
+        if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+            timestamp = timestamp.replace(' ', 'T') + 'Z';
+        }
+        const checkinDate = new Date(timestamp);
+        const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
+        const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const statusBadgeClass = checkin.status_id === 0
+            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+        const statusText = checkin.status_id === 0 ? 'OK' : 'Help';
+
+        div.innerHTML = `
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
+                <span class="text-xs text-slate-600 dark:text-vsdark-text-dim">${dateStr} ${timeStr}</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-vsdark-text-dim">${checkin.status || '(No message)'}</p>
+        `;
+        return div;
+    }
+
+    function prependAdminFeedbackEntry(feedbackText, statusId) {
+        const historyList = document.getElementById('checkin-history-list');
+
+        // Create a fake checkin object for this entry
+        const now = new Date();
+        const fakeCheckin = {
+            id: 'admin-' + Date.now(),
+            status_id: statusId,
+            timestamp: now.toISOString(),
+            status: `[${currentUserName}] ${feedbackText}`
+        };
+
+        const div = createCheckInHistoryEntry(fakeCheckin);
+        historyList.insertBefore(div, historyList.firstChild);
+    }
+
+    // Admin Feedback Button Handlers
+    const feedbackSubmitBtn = document.getElementById('btn-feedback-submit');
+    const feedbackCloseBtn = document.getElementById('btn-feedback-close');
+
+    if (feedbackSubmitBtn) {
+        feedbackSubmitBtn.addEventListener('click', async () => {
+            const feedbackText = document.getElementById('admin-feedback-text').value.trim();
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            if (!feedbackText) {
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Please enter feedback text';
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                return;
+            }
+
+            if (!currentViewingUserLatestCheckin) {
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Error: No check-in data available';
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                return;
+            }
+
+            try {
+                feedbackSubmitBtn.disabled = true;
+                feedbackCloseBtn.disabled = true;
+
+                const res = await fetch(`/api/admin/checkins/${currentViewingUserLatestCheckin.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: feedbackText,
+                        status_id: currentViewingUserLatestCheckin.status_id // Keep original status
+                    })
+                });
+
+                if (res.ok) {
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.textContent = 'Feedback submitted successfully';
+                    feedbackMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+
+                    // Add new entry to history immediately
+                    prependAdminFeedbackEntry(feedbackText, currentViewingUserLatestCheckin.status_id);
+
+                    // Clear feedback text
+                    document.getElementById('admin-feedback-text').value = '';
+                } else {
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.textContent = 'Failed to submit feedback';
+                    feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                }
+            } catch (err) {
+                console.error('Error submitting feedback:', err);
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Error: ' + err.message;
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+            } finally {
+                feedbackSubmitBtn.disabled = false;
+                feedbackCloseBtn.disabled = false;
+            }
+        });
+    }
+
+    if (feedbackCloseBtn) {
+        feedbackCloseBtn.addEventListener('click', async () => {
+            const feedbackText = document.getElementById('admin-feedback-text').value.trim();
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            if (!feedbackText) {
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Please enter feedback text';
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                return;
+            }
+
+            if (!currentViewingUserLatestCheckin) {
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Error: No check-in data available';
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                return;
+            }
+
+            try {
+                feedbackSubmitBtn.disabled = true;
+                feedbackCloseBtn.disabled = true;
+
+                const res = await fetch(`/api/admin/checkins/${currentViewingUserLatestCheckin.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: feedbackText,
+                        status_id: 0 // Close the request (OK status)
+                    })
+                });
+
+                if (res.ok) {
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.textContent = 'Help request closed and feedback submitted';
+                    feedbackMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+
+                    // Add new entry to history immediately (status_id: 0 = closed/OK)
+                    prependAdminFeedbackEntry(feedbackText, 0);
+
+                    // Clear feedback text
+                    document.getElementById('admin-feedback-text').value = '';
+                } else {
+                    feedbackMessage.classList.remove('hidden');
+                    feedbackMessage.textContent = 'Failed to close help request';
+                    feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                }
+            } catch (err) {
+                console.error('Error closing help request:', err);
+                feedbackMessage.classList.remove('hidden');
+                feedbackMessage.textContent = 'Error: ' + err.message;
+                feedbackMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+            } finally {
+                feedbackSubmitBtn.disabled = false;
+                feedbackCloseBtn.disabled = false;
+            }
         });
     }
 
