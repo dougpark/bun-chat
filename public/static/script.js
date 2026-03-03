@@ -160,7 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (helpEl) helpEl.textContent = String(helpAlerts);
         if (alertsEl) alertsEl.textContent = String(zoneAlerts);
 
-        // Visual State Escalation based on new goals
+        // Visual State Escalation based on highest severity from server
+        // Get highest severity from server data, default to 1 (Clear)
+        const highestSeverity = Number(data.highest_severity ?? 1);
+        const zoneLevel = ZONE_LEVELS[highestSeverity] || ZONE_LEVELS[1];
+        const borderHex = zoneLevel.hex;
+
         // Remove all possible state classes first for clean state transitions
         const stateClasses = [
             'bg-emerald-50/50', 'bg-amber-50/50', 'bg-red-50/80',
@@ -171,23 +176,25 @@ document.addEventListener('DOMContentLoaded', () => {
         stateClasses.forEach(cls => dash.classList.remove(cls));
         dash.classList.remove('animate-pulse');
 
-        if (helpAlerts > 0) {
-            // Help Alert > 0: Red border + animate-pulse (Most urgent)
-            dash.classList.add('bg-red-50/80', 'border-red-600');
-            dash.classList.add('dark:bg-red-900/30', 'dark:border-red-500');
-            dash.classList.add('animate-pulse');
-        } else if (zoneAlerts >= 3) {
-            // Level 4 (Red): 3+ zone alerts - Solid red border
-            dash.classList.add('bg-red-50/80', 'border-red-600');
-            dash.classList.add('dark:bg-red-900/30', 'dark:border-red-500');
-        } else if (zoneAlerts > 0) {
-            // Level 2/3 (Yellow/Orange): 1-2 zone alerts - Solid yellow border
-            dash.classList.add('bg-amber-50/50', 'border-amber-500');
-            dash.classList.add('dark:bg-amber-950/20', 'dark:border-amber-500');
+        // Apply border color using hex code from ZONE_LEVELS
+        dash.style.borderColor = borderHex;
+
+        // Apply appropriate background based on severity
+        if (highestSeverity === 4) {
+            // Danger: Red background
+            dash.classList.add('bg-red-50/80', 'dark:bg-red-900/30');
+            if (helpAlerts > 0) {
+                dash.classList.add('animate-pulse'); // Pulse animation for active help alerts
+            }
+        } else if (highestSeverity === 3) {
+            // Warning: Orange/Amber background
+            dash.classList.add('bg-amber-50/50', 'dark:bg-amber-950/20');
+        } else if (highestSeverity === 2) {
+            // Caution: Yellow/Amber background
+            dash.classList.add('bg-amber-50/50', 'dark:bg-amber-950/20');
         } else {
-            // Level 1 (Green): No alerts - Standard emerald border
-            dash.classList.add('bg-emerald-50/50', 'border-emerald-500');
-            dash.classList.add('dark:bg-emerald-950/20', 'dark:border-emerald-500');
+            // Clear: Green background
+            dash.classList.add('bg-emerald-50/50', 'dark:bg-emerald-950/20');
         }
     }
 

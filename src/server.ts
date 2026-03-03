@@ -43,6 +43,7 @@ interface DashboardStats {
     recently_ok: number;
     help_alerts: number;
     zone_alerts: number;
+    highest_severity: number;
 }
 
 function getDashboardStats(): DashboardStats {
@@ -79,11 +80,24 @@ function getDashboardStats(): DashboardStats {
         WHERE COALESCE(hazard_level_id, 1) > 1
     `).get() as { count: number } | null;
 
+    // Calculate highest severity: 4 if help alerts, otherwise max hazard_level_id from zones
+    let highestSeverity = 1; // Default to Clear
+    if (activeHelp && activeHelp.count > 0) {
+        highestSeverity = 4; // Help alerts are most urgent
+    } else {
+        const maxZoneLevel = db.query(`
+            SELECT MAX(COALESCE(hazard_level_id, 1)) as max_level
+            FROM tags
+        `).get() as { max_level: number } | null;
+        highestSeverity = maxZoneLevel?.max_level ?? 1;
+    }
+
     return {
         total_online: totalOnline?.count ?? 0,
         recently_ok: recentlyOk?.count ?? 0,
         help_alerts: activeHelp?.count ?? 0,
         zone_alerts: nonGreenZones?.count ?? 0,
+        highest_severity: highestSeverity,
     };
 }
 
