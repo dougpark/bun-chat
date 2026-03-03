@@ -1,6 +1,11 @@
 // public/static/script.js
 
 import { ICONS } from './icons.js';
+import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from "/vendor/constants.js";
+
+console.log('sample zone levels from constants:', ZONE_LEVELS);
+console.log('sample user levels from constants:', USER_LEVELS);
+console.log('sample weather levels from constants:', WEATHER_LEVELS);
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements

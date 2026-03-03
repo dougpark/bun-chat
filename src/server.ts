@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { db } from "./db";
 import type { Server } from "bun";
 import { password } from "bun";
+import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from "./constants.ts";
 
 const PORT = process.env.PORT || 3010;
 const SESSION_SECRET = process.env.SESSION_SECRET || "super-secret-key-change-me";
