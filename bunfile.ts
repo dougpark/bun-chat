@@ -1,9 +1,12 @@
 import { file, write, Glob } from "bun";
+import { watch } from "fs";
 
 // Configuration
 const CLIENT_SRC = "./src/client";
+const MASTER_TEMPLATE = `${CLIENT_SRC}/template.html`;
 const COMPONENTS_DIR = `${CLIENT_SRC}/components`;
 const DIST_DIR = "./public";
+const INDEX_FILE = `${DIST_DIR}/index.html`;
 
 // Client-side build script to assemble index.html from components
 
@@ -12,7 +15,7 @@ async function assembleHTML() {
 
     try {
         // 1. Load the Master Template
-        const masterPath = `${CLIENT_SRC}/index.html`;
+        const masterPath = MASTER_TEMPLATE;
         let indexContent = await file(masterPath).text();
 
         // 2. Regex to find [[IMPORT:component_name]]
@@ -44,8 +47,8 @@ async function assembleHTML() {
         // .replace(/<!--[\s\S]*?-->/g, ""); // Removes HTML comments
 
         // 5. Write the final file to the public folder
-        await write(`${DIST_DIR}/index.html`, minifiedHTML);
-        console.log(`🚀 Build Successful: ${DIST_DIR}/index.html is ready.`);
+        await write(INDEX_FILE, minifiedHTML);
+        console.log(`🚀 Build Successful: ${INDEX_FILE} is ready.`);
 
     } catch (error) {
         console.error("❌ Build Failed:", error);
@@ -55,3 +58,20 @@ async function assembleHTML() {
 
 // Execute the build
 assembleHTML();
+
+
+// Watch the entire src directory for changes
+const watcher = watch(CLIENT_SRC, { recursive: true }, async (event, filename) => {
+    if (filename) {
+        console.log(`\n📄 Change detected in ${filename}. Reassembling...`);
+        await assembleHTML();
+    }
+});
+
+console.log(`👀 Watching for changes in ${CLIENT_SRC}...`);
+
+// Keep the process alive
+process.on("SIGINT", () => {
+    watcher.close();
+    process.exit();
+});
