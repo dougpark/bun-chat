@@ -1,0 +1,22 @@
+<div id="view-members"
+    class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+    <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
+        <h1 class="text-xl font-bold">Members</h1>
+    </header>
+    <main class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div
+            class="bg-white dark:bg-vsdark-surface p-4 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="members-filter" placeholder="Filter by name or email..."
+                    class="flex-1 p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
+                <button type="button" id="members-filter-help" onclick="toggleHelpFilter()"
+                    class="px-3 py-2 rounded border border-red-300 dark:border-red-600 bg-slate-50 dark:bg-vsdark-input text-red-600 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-vsdark-hover transition-colors text-sm">
+                    Needs Help
+                </button>
+            </div>
+            <div id="members-list" class="space-y-3">
+                <!-- Members items injected here -->
+            </div>
+        </div>
+    </main>
+</div>

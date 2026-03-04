@@ -4,8 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --hot src/server.ts",
-    "start": "bun src/server.ts"
+    "build": "bun bunfile.ts",
+    "dev": "bun run build && bun --hot src/server.ts",
+    "start": "bun run build && bun src/server.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
