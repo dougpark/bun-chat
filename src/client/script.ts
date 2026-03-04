@@ -1,7 +1,7 @@
 // src/client/script.ts
 
 import { ICONS } from './modules/icons.js';
-import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from "./vendor/constants.js";
+import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from './modules/constants.js';
 
 // Type Definitions
 interface DashboardData {
