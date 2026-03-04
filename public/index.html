@@ -91,6 +91,25 @@
             <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
 
                 <h1 class="text-xl font-bold">Emergency Chat</h1>
+
+                <!-- Announcement Display -->
+                <div id="announcement-container" class="mx-4 mt-3 hidden">
+                    <div id="announcement-display" class="p-3 rounded-lg border-2 transition-all duration-300">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-black uppercase tracking-wider">📢 Announcement</span>
+                                    <span id="announcement-level-badge"
+                                        class="text-xs font-bold px-2 py-0.5 rounded"></span>
+                                </div>
+                                <p id="announcement-text" class="text-sm font-semibold"></p>
+                                <p id="announcement-meta"
+                                    class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="dashboard"
                     class="mx-4 mt-4 p-3 rounded-xl border-2 transition-all duration-500 bg-green-50/50 border-green-500 dark:bg-green-950/20 dark:border-green-500">
                     <div class="grid grid-cols-3 gap-2 text-center">
@@ -289,6 +308,11 @@
                     <span class="icon-zones"></span>
                     Zone Admin
                 </button>
+                <button id="btn-admin-announcements" onclick="openAdminSection('announcements')"
+                    class="w-full max-w-xs py-4 bg-amber-600 text-white rounded-lg font-bold shadow-md hover:bg-amber-700 transition-colors text-lg flex items-center justify-center gap-2">
+                    <span class="icon-bell"></span>
+                    Announcements
+                </button>
             </main>
         </div>
 
@@ -480,7 +504,79 @@
             </main>
         </div>
 
-        <!-- View 10: Members (Initially off-screen) -->
+        <!-- View 10: Announcements Admin (Initially off-screen) -->
+        <div id="view-announcements"
+            class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
+            <header
+                class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <button onclick="openAdmin()"
+                        class="mr-2 text-slate-500 dark:text-vsdark-text-secondary hover:text-vsdark-active5">
+                        <span class="icon-back"></span>
+                    </button>
+                    <h1 class="text-xl font-bold">Announcements</h1>
+                </div>
+            </header>
+            <main class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Current Announcement Section -->
+                <div
+                    class="bg-white dark:bg-vsdark-surface p-4 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border">
+                    <h2 class="text-lg font-bold mb-3 dark:text-vsdark-text">Current Announcement</h2>
+                    <div id="current-announcement-display"
+                        class="p-3 bg-slate-50 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light">
+                        <p class="text-sm text-slate-500 dark:text-vsdark-text-secondary text-center">No active
+                            announcement</p>
+                    </div>
+                    <button id="btn-clear-announcement" onclick="clearCurrentAnnouncement()" disabled
+                        class="w-full mt-3 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
+                        Clear Current Announcement
+                    </button>
+                </div>
+
+                <!-- Create New Announcement Section -->
+                <div
+                    class="bg-white dark:bg-vsdark-surface p-4 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border">
+                    <h2 class="text-lg font-bold mb-3 dark:text-vsdark-text">Publish New Announcement</h2>
+                    <form id="announcement-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-vsdark-text-dim mb-1">
+                                Announcement Text
+                            </label>
+                            <textarea id="announcement-text-input" name="announcement_text" rows="4" required
+                                placeholder="Enter announcement message..."
+                                class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-vsdark-text-dim mb-1">
+                                Hazard Level
+                            </label>
+                            <select id="announcement-hazard-level-input" name="hazard_level_id"
+                                class="w-full p-2 rounded border border-slate-300 dark:border-vsdark-border-light bg-slate-50 dark:bg-vsdark-input dark:text-vsdark-text focus:ring-2 focus:ring-orange-500 outline-none">
+                                <!-- Options populated dynamically from ZONE_LEVELS -->
+                            </select>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit"
+                                class="w-full py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 transition-colors">
+                                Publish Announcement
+                            </button>
+                        </div>
+                    </form>
+                    <div id="announcement-message" class="text-center text-sm mt-2 hidden"></div>
+                </div>
+
+                <!-- Announcements History Section -->
+                <div
+                    class="bg-white dark:bg-vsdark-surface p-4 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border">
+                    <h2 class="text-lg font-bold mb-3 dark:text-vsdark-text">History</h2>
+                    <div id="announcements-history-list" class="space-y-2">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- View 11: Members (Initially off-screen) -->
         <div id="view-members"
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-20 transition-transform duration-300 ease-in-out transform translate-x-full pb-16">
             <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">

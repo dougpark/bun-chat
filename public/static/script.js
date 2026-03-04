@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewAdminZones = document.getElementById('view-admin-zones');
     const viewZoneEdit = document.getElementById('view-zone-edit');
     const viewUserEdit = document.getElementById('view-user-edit');
+    const viewAnnouncements = document.getElementById('view-announcements');
     const viewMembers = document.getElementById('view-members');
     const viewCheckIn = document.getElementById('view-checkin');
     const viewCheckInHistory = document.getElementById('view-checkin-history');
@@ -126,10 +127,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const initAnnouncementHazardDropdown = () => {
+        const hazardSelect = document.getElementById('announcement-hazard-level-input');
+        if (!hazardSelect) return;
+
+        hazardSelect.innerHTML = '';
+
+        Object.keys(ZONE_LEVELS).forEach(levelId => {
+            const option = document.createElement('option');
+            option.value = levelId;
+            option.textContent = `${ZONE_LEVELS[levelId].label}`;
+            hazardSelect.appendChild(option);
+        });
+    };
+
     // Run it immediately
     initLevelDropdowns();
     initHazardDropdown();
     initWeatherDropdown();
+    initAnnouncementHazardDropdown();
 
     // ========== Dashboard Update Logic ========== //
     function updateDashboard(data) {
@@ -197,7 +213,70 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear: Green background
             dash.classList.add('bg-emerald-50/50', 'dark:bg-emerald-950/20');
         }
+
+        // Handle announcement if present in data
+        if (data.announcement !== undefined) {
+            displayAnnouncement(data.announcement);
+        }
     }
+
+    // ========== ANNOUNCEMENT DISPLAY LOGIC ========== //
+    function displayAnnouncement(announcement) {
+        const announcementContainer = document.getElementById('announcement-container');
+        const announcementDisplay = document.getElementById('announcement-display');
+        const announcementText = document.getElementById('announcement-text');
+        const announcementLevelBadge = document.getElementById('announcement-level-badge');
+        const announcementMeta = document.getElementById('announcement-meta');
+
+        if (!announcement || !announcement.is_active) {
+            announcementContainer.classList.add('hidden');
+            return;
+        }
+
+        // Show announcement
+        announcementContainer.classList.remove('hidden');
+        announcementText.textContent = announcement.announcement_text;
+
+        // Get hazard level styling
+        const hazardLevel = ZONE_LEVELS[announcement.hazard_level_id] || ZONE_LEVELS[1];
+        const borderColor = hazardLevel.hex;
+        const bgColor = hazardLevel.bg;
+
+        // Update display styling
+        announcementDisplay.style.borderColor = borderColor;
+        announcementDisplay.style.backgroundColor = bgColor + '20'; // Add transparency
+
+        // Update level badge
+        announcementLevelBadge.textContent = hazardLevel.label;
+        announcementLevelBadge.style.backgroundColor = hazardLevel.hex;
+        announcementLevelBadge.style.color = 'white';
+
+        // Format metadata
+        let timestamp = announcement.created_at;
+        if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+            timestamp = timestamp.replace(' ', 'T') + 'Z';
+        }
+        const date = new Date(timestamp);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        announcementMeta.textContent = `Posted by ${announcement.created_by_user_name} on ${dateStr} at ${timeStr}`;
+    }
+
+    // Fetch and display current announcement
+    async function fetchAndDisplayAnnouncement() {
+        try {
+            const res = await fetch('/api/announcements');
+            if (res.ok) {
+                const announcement = await res.json();
+                displayAnnouncement(announcement);
+            }
+        } catch (err) {
+            console.error('Error fetching announcement:', err);
+        }
+    }
+
+    // Call on page load
+    fetchAndDisplayAnnouncement();
 
     // ========== CENTRALIZED NAVIGATION SYSTEM ==========
     const navigationStack = [];
@@ -210,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         admin: { el: viewAdmin },
         adminNav: { el: viewAdminNav },
         adminZones: { el: viewAdminZones },
+        announcements: { el: viewAnnouncements },
         zoneEdit: { el: viewZoneEdit },
         userEdit: { el: viewUserEdit },
         members: { el: viewMembers },
@@ -1185,6 +1265,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching zones:', e);
             }
             navigateTo('adminZones');
+        } else if (section === 'announcements') {
+            // Fetch Announcements
+            try {
+                const res = await fetch('/api/announcements');
+                if (res.ok) {
+                    const currentAnnouncement = await res.json();
+                    displayCurrentAnnouncement(currentAnnouncement);
+                }
+
+                const historyRes = await fetch('/api/admin/announcements');
+                if (historyRes.ok) {
+                    const history = await historyRes.json();
+                    renderAnnouncementsHistory(history);
+                }
+            } catch (e) {
+                console.error('Error fetching announcements:', e);
+            }
+            navigateTo('announcements');
         }
     };
 
@@ -1427,6 +1525,187 @@ document.addEventListener('DOMContentLoaded', () => {
                 zoneEditMessage.textContent = 'Network error';
                 zoneEditMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
                 zoneEditMessage.classList.remove('hidden');
+            }
+        });
+    }
+
+    // ========== ANNOUNCEMENTS MANAGEMENT ========== //
+    let currentAnnouncementId = null;
+
+    function displayCurrentAnnouncement(announcement) {
+        const displayEl = document.getElementById('current-announcement-display');
+        const clearBtn = document.getElementById('btn-clear-announcement');
+
+        if (!announcement || !announcement.is_active) {
+            displayEl.innerHTML = '<p class="text-sm text-slate-500 dark:text-vsdark-text-secondary text-center">No active announcement</p>';
+            clearBtn.disabled = true;
+            currentAnnouncementId = null;
+            return;
+        }
+
+        currentAnnouncementId = announcement.id;
+        clearBtn.disabled = false;
+
+        const hazardLevel = ZONE_LEVELS[announcement.hazard_level_id] || ZONE_LEVELS[1];
+        let timestamp = announcement.created_at;
+        if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+            timestamp = timestamp.replace(' ', 'T') + 'Z';
+        }
+        const date = new Date(timestamp);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        displayEl.innerHTML = `
+            <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 rounded text-xs font-bold" style="background-color: ${hazardLevel.hex}; color: white;">
+                        ${hazardLevel.label}
+                    </span>
+                    <span class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${dateStr} at ${timeStr}</span>
+                </div>
+                <p class="text-sm font-semibold dark:text-vsdark-text">${announcement.announcement_text}</p>
+                <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary">By ${announcement.created_by_user_name}</p>
+            </div>
+        `;
+    }
+
+    function renderAnnouncementsHistory(announcements) {
+        const historyList = document.getElementById('announcements-history-list');
+        historyList.innerHTML = '';
+
+        if (announcements.length === 0) {
+            historyList.innerHTML = '<p class="text-sm text-slate-500 dark:text-vsdark-text-secondary text-center">No history</p>';
+            return;
+        }
+
+        announcements.forEach(ann => {
+            const div = document.createElement('div');
+            div.className = 'p-3 bg-slate-50 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
+
+            const hazardLevel = ZONE_LEVELS[ann.hazard_level_id] || ZONE_LEVELS[1];
+            const statusClass = ann.is_active ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+            const statusText = ann.is_active ? 'Active' : 'Cleared';
+
+            let timestamp = ann.created_at;
+            if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+                timestamp = timestamp.replace(' ', 'T') + 'Z';
+            }
+            const date = new Date(timestamp);
+            const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let clearedInfo = '';
+            if (!ann.is_active && ann.cleared_at) {
+                let clearedTimestamp = ann.cleared_at;
+                if (typeof clearedTimestamp === 'string' && !clearedTimestamp.includes('Z') && !clearedTimestamp.includes('+')) {
+                    clearedTimestamp = clearedTimestamp.replace(' ', 'T') + 'Z';
+                }
+                const clearedDate = new Date(clearedTimestamp);
+                const clearedDateStr = clearedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                const clearedTimeStr = clearedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                clearedInfo = `<p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">Cleared by ${ann.cleared_by_user_name} on ${clearedDateStr} at ${clearedTimeStr}</p>`;
+            }
+
+            div.innerHTML = `
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 rounded text-xs font-bold ${statusClass}">${statusText}</span>
+                    <span class="px-2 py-0.5 rounded text-xs font-bold" style="background-color: ${hazardLevel.hex}; color: white;">
+                        ${hazardLevel.label}
+                    </span>
+                    <span class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${dateStr} ${timeStr}</span>
+                </div>
+                <p class="text-sm dark:text-vsdark-text">${ann.announcement_text}</p>
+                <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">By ${ann.created_by_user_name}</p>
+                ${clearedInfo}
+            `;
+            historyList.appendChild(div);
+        });
+    }
+
+    window.clearCurrentAnnouncement = async () => {
+        if (!currentAnnouncementId) return;
+
+        if (!confirm('Are you sure you want to clear the current announcement?')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/announcements/${currentAnnouncementId}/clear`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                // Refresh the display
+                displayCurrentAnnouncement(null);
+
+                // Reload history
+                const historyRes = await fetch('/api/admin/announcements');
+                if (historyRes.ok) {
+                    const history = await historyRes.json();
+                    renderAnnouncementsHistory(history);
+                }
+            } else {
+                alert('Failed to clear announcement');
+            }
+        } catch (e) {
+            console.error('Error clearing announcement:', e);
+            alert('Error clearing announcement');
+        }
+    };
+
+    // Handle announcement form submission
+    const announcementForm = document.getElementById('announcement-form');
+    if (announcementForm) {
+        announcementForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const announcementMessage = document.getElementById('announcement-message');
+            announcementMessage.classList.add('hidden');
+
+            const data = {
+                announcement_text: document.getElementById('announcement-text-input').value,
+                hazard_level_id: parseInt(document.getElementById('announcement-hazard-level-input').value)
+            };
+
+            try {
+                const res = await fetch('/api/admin/announcements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    announcementMessage.textContent = 'Announcement published successfully!';
+                    announcementMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+                    announcementMessage.classList.remove('hidden');
+
+                    // Clear form
+                    announcementForm.reset();
+
+                    // Refresh displays
+                    setTimeout(async () => {
+                        const currentRes = await fetch('/api/announcements');
+                        if (currentRes.ok) {
+                            const current = await currentRes.json();
+                            displayCurrentAnnouncement(current);
+                        }
+
+                        const historyRes = await fetch('/api/admin/announcements');
+                        if (historyRes.ok) {
+                            const history = await historyRes.json();
+                            renderAnnouncementsHistory(history);
+                        }
+                    }, 500);
+                } else {
+                    const result = await res.json();
+                    announcementMessage.textContent = result.error || 'Failed to publish announcement';
+                    announcementMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                    announcementMessage.classList.remove('hidden');
+                }
+            } catch (err) {
+                announcementMessage.textContent = 'Network error';
+                announcementMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                announcementMessage.classList.remove('hidden');
             }
         });
     }

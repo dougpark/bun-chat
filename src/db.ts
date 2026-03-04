@@ -118,6 +118,23 @@ db.run(`
   );
 `);
 
+// announcements table for zone/system admin public announcements
+db.run(`
+  CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    announcement_text TEXT NOT NULL,
+    hazard_level_id INTEGER DEFAULT 1,
+    created_by_user_id INTEGER NOT NULL,
+    created_by_user_name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active INTEGER DEFAULT 1,
+    cleared_at DATETIME,
+    cleared_by_user_id INTEGER,
+    cleared_by_user_name TEXT,
+    FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+  );
+`);
+
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#North Zone', 'North of Main',  2, 'Admin', 0, 2);`);

@@ -699,6 +699,172 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Get current active announcement (public endpoint)
+        if (url.pathname === "/api/announcements" && req.method === "GET") {
+            try {
+                const announcement = db.query(`
+                    SELECT * FROM announcements 
+                    WHERE is_active = 1 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                `).get();
+                return new Response(JSON.stringify(announcement || null), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        // Get announcements history (admin only)
+        if (url.pathname === "/api/admin/announcements" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.user_level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                const announcements = db.query(`
+                    SELECT * FROM announcements 
+                    ORDER BY created_at DESC
+                `).all();
+                return new Response(JSON.stringify(announcements), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        // Publish new announcement (admin only)
+        if (url.pathname === "/api/admin/announcements" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.user_level, u.full_name 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number, full_name: string } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                const body = await req.json() as any;
+                const { announcement_text, hazard_level_id } = body;
+
+                if (!announcement_text || !announcement_text.trim()) {
+                    return new Response(JSON.stringify({ error: "Announcement text is required" }), { status: 400 });
+                }
+
+                // Clear any existing active announcements
+                db.run("UPDATE announcements SET is_active = 0 WHERE is_active = 1");
+
+                // Insert new announcement
+                const result = db.query(`
+                    INSERT INTO announcements (
+                        announcement_text, 
+                        hazard_level_id, 
+                        created_by_user_id, 
+                        created_by_user_name
+                    ) VALUES ($text, $level, $user_id, $user_name)
+                    RETURNING id
+                `).get({
+                    $text: announcement_text,
+                    $level: parseInt(hazard_level_id) || 1,
+                    $user_id: session.user_id,
+                    $user_name: session.full_name
+                }) as { id: number };
+
+                // Publish update to all clients
+                try {
+                    const stats = getDashboardStats();
+                    const announcement = db.query("SELECT * FROM announcements WHERE id = $id").get({ $id: result.id });
+                    server.publish("dashboard", JSON.stringify({
+                        type: "DASHBOARD_UPDATE",
+                        ...stats,
+                        announcement: announcement
+                    }));
+                } catch (error) {
+                    console.error("Error publishing announcement:", error);
+                }
+
+                return new Response(JSON.stringify({ success: true, id: result.id }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
+        // Clear announcement (admin only)
+        const clearAnnouncementMatch = url.pathname.match(/^\/api\/admin\/announcements\/(\d+)\/clear$/);
+        if (clearAnnouncementMatch && req.method === "PUT") {
+            const announcementId = parseInt(clearAnnouncementMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.user_level, u.full_name 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number, full_name: string } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            try {
+                db.run(`
+                    UPDATE announcements 
+                    SET is_active = 0, 
+                        cleared_at = CURRENT_TIMESTAMP, 
+                        cleared_by_user_id = $user_id, 
+                        cleared_by_user_name = $user_name 
+                    WHERE id = $id
+                `, {
+                    $id: announcementId,
+                    $user_id: session.user_id,
+                    $user_name: session.full_name
+                } as any);
+
+                // Publish update to all clients
+                try {
+                    const stats = getDashboardStats();
+                    server.publish("dashboard", JSON.stringify({
+                        type: "DASHBOARD_UPDATE",
+                        ...stats,
+                        announcement: null
+                    }));
+                } catch (error) {
+                    console.error("Error publishing clear announcement:", error);
+                }
+
+                return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
