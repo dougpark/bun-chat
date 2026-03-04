@@ -1,0 +1,29 @@
+<nav
+    class="absolute bottom-0 left-0 right-0 z-30 flex justify-around bg-white dark:bg-vsdark-secondary border-t border-slate-200 dark:border-vsdark-border py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16">
+    <button id="nav-home" onclick="goHome()"
+        class="nav-btn flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
+        <span class="icon-home"></span>
+        <span class="text-[10px] font-bold">Home</span>
+    </button>
+    <button id="nav-checkin" onclick="openCheckIn()"
+        class="nav-btn flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
+        <span class="icon-bell"></span>
+        <span class="text-[10px] font-bold">Check In</span>
+    </button>
+    <button id="nav-members" onclick="openMembers()"
+        class="nav-btn flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
+        <span class="icon-users"></span>
+        <span class="text-[10px] font-bold">Members</span>
+    </button>
+
+    <button id="nav-settings" onclick="openSettings()"
+        class="nav-btn flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text">
+        <span class="icon-settings"></span>
+        <span class="text-[10px] font-bold">Settings</span>
+    </button>
+    <button id="nav-admin" onclick="openAdmin()"
+        class="nav-btn flex flex-col items-center text-slate-400 dark:text-vsdark-text-secondary hover:text-orange-500 dark:hover:text-vsdark-text hidden">
+        <span class="icon-admin"></span>
+        <span class="text-[10px] font-bold">Admin</span>
+    </button>
+</nav>
