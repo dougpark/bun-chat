@@ -330,10 +330,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 viewAuth.classList.add('hidden');
 
                 const user = await res.json();
-                currentUserLevel = user.level || 0;
+                currentUserLevel = user.user_level || 0;
                 currentUserName = user.name || 'Admin';
 
-                if ((user.level || 0) >= 2) {
+                if ((user.user_level || 0) >= 2) {
                     navAdmin.classList.remove('hidden');
                 } else {
                     navAdmin.classList.add('hidden');
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update Level Display
                 const levelDisplay = document.getElementById('profile-level-display');
                 if (levelDisplay) {
-                    const level = user.level || 0;
+                    const level = user.user_level || 0;
                     const levelLabel = USER_LEVELS[level]?.label || 'Unknown';
                     levelDisplay.textContent = `${level} - ${levelLabel}`;
                 }
@@ -608,9 +608,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'p-3 bg-white dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
 
-            const memberLevel = USER_LEVELS[member.level]?.label
-                ? `${member.level} ${USER_LEVELS[member.level].label}`
-                : `${member.level} Unknown`;
+            const memberLevel = USER_LEVELS[member.user_level]?.label
+                ? `${member.user_level} ${USER_LEVELS[member.user_level].label}`
+                : `${member.user_level} Unknown`;
 
             // Format check-in info if available
             let checkinHTML = '';
@@ -1203,9 +1203,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light cursor-pointer hover:bg-slate-100 dark:hover:bg-vsdark-border-light';
 
-            const userLevel = USER_LEVELS[user.level]?.label
-                ? `${user.level} ${USER_LEVELS[user.level].label}`
-                : `${user.level} Unknown`;
+            const userLevel = USER_LEVELS[user.user_level]?.label
+                ? `${user.user_level} ${USER_LEVELS[user.user_level].label}`
+                : `${user.user_level} Unknown`;
 
             div.innerHTML = `
                 <div class="flex-1">
@@ -1252,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('user-email-input').value = user.email || '';
         document.getElementById('user-phone-input').value = user.phone_number || '';
         document.getElementById('user-address-input').value = user.physical_address || '';
-        document.getElementById('user-level-input').value = user.level || '0';
+        document.getElementById('user-level-input').value = user.user_level || '0';
 
         navigateTo('userEdit');
     };
@@ -1278,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email: document.getElementById('user-email-input').value,
                 phone_number: document.getElementById('user-phone-input').value,
                 physical_address: document.getElementById('user-address-input').value,
-                level: parseInt(document.getElementById('user-level-input').value)
+                user_level: parseInt(document.getElementById('user-level-input').value)
             };
 
             try {
@@ -1368,7 +1368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('zone-name-input').value = zone.name;
         document.getElementById('zone-description-input').value = zone.description || '';
         document.getElementById('zone-hazard-level-id-input').value = String(zone.hazard_level_id || 1);
-        document.getElementById('zone-level-input').value = zone.level || '0';
+        document.getElementById('zone-level-input').value = zone.access_level || '0';
         document.getElementById('zone-weather-id-input').value = String(zone.weather_id || 1);
         document.getElementById('zone-person-in-charge-input').value = zone.person_in_charge || '';
 
@@ -1395,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: document.getElementById('zone-name-input').value,
                 description: document.getElementById('zone-description-input').value,
                 hazard_level_id: parseInt(document.getElementById('zone-hazard-level-id-input').value),
-                level: parseInt(document.getElementById('zone-level-input').value),
+                access_level: parseInt(document.getElementById('zone-level-input').value),
                 weather_id: parseInt(document.getElementById('zone-weather-id-input').value),
                 person_in_charge: document.getElementById('zone-person-in-charge-input').value
             };

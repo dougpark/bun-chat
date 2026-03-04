@@ -11,7 +11,7 @@ db.run(`
     physical_address TEXT NOT NULL,
     email TEXT UNIQUE,
     password_hash TEXT,
-    level INTEGER DEFAULT 0, -- userlevel: 0=regular user, 1=member, 2=zone admin, 3=system admin
+    user_level INTEGER DEFAULT 0, -- userlevel: 0=regular user, 1=member, 2=zone admin, 3=system admin
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
@@ -24,7 +24,7 @@ try {
   db.run("ALTER TABLE users ADD COLUMN password_hash TEXT");
 } catch (e) { }
 try {
-  db.run("ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 0");
+  db.run("ALTER TABLE users ADD COLUMN user_level INTEGER DEFAULT 0");
 } catch (e) { }
 try {
   db.run("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
@@ -45,7 +45,7 @@ db.run(`
     name TEXT NOT NULL UNIQUE,
     description TEXT,
     hazard_level_id INTEGER DEFAULT 1, -- 1=Green - Clear, 2=Yellow - Caution, 3=Orange - Warning, 4=Red - Danger
-    level INTEGER DEFAULT 0, -- accesslevel: 0=regular user, 1=member, 2=zone admin, 3=system admin
+    access_level INTEGER DEFAULT 0, -- accesslevel: 0=regular user, 1=member, 2=zone admin, 3=system admin
     weather_id INTEGER DEFAULT 1, -- 1=Clear, 2=Inclement, 3=Severe, 4=Extreme
     person_in_charge TEXT
   );
@@ -53,7 +53,7 @@ db.run(`
 
 try {
   db.run("ALTER TABLE tags ADD COLUMN weather_id INTEGER DEFAULT 1");
-  db.run("ALTER TABLE tags ADD COLUMN level INTEGER DEFAULT 0");
+  db.run("ALTER TABLE tags ADD COLUMN access_level INTEGER DEFAULT 0");
   db.run("ALTER TABLE tags ADD COLUMN hazard_level_id INTEGER DEFAULT 1");
 } catch (e) { }
 
@@ -119,11 +119,11 @@ db.run(`
 `);
 
 // Seed initial data (for demonstration)
-db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#North Zone', 'North of Main',  2, 'Admin', 0, 2);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#South Zone', 'South of Main',  3, 'Admin', 1, 4);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Zone Admin', 'Zone discussion',  1, 'Admin', 2, 1);`);
-db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, level, hazard_level_id) VALUES ('#Sys Admin', 'System discussion', 1, 'Admin', 3, 1);`);
-db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  level, password_hash) VALUES ('Default Admin', 'admin@test.com', '555-123-4567', '123 Main St',  3,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#North Zone', 'North of Main',  2, 'Admin', 0, 2);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#South Zone', 'South of Main',  3, 'Admin', 1, 4);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#Zone Admin', 'Zone discussion',  1, 'Admin', 2, 1);`);
+db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#Sys Admin', 'System discussion', 1, 'Admin', 3, 1);`);
+db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  user_level, password_hash) VALUES ('Default Admin', 'admin@test.com', '555-123-4567', '123 Main St',  3,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
 
 export { db };

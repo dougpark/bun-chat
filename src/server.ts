@@ -152,7 +152,7 @@ const server = Bun.serve<WebSocketData>({
 
             // Verify session in DB
             const session = db.query(`
-                SELECT s.user_id, u.level as userLevel 
+                SELECT s.user_id, u.user_level as userLevel 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
@@ -277,7 +277,7 @@ const server = Bun.serve<WebSocketData>({
             const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
 
-            const user = db.query("SELECT id, full_name, email, phone_number, physical_address, level FROM users WHERE id = $id").get({ $id: session.user_id });
+            const user = db.query("SELECT id, full_name, email, phone_number, physical_address, user_level FROM users WHERE id = $id").get({ $id: session.user_id });
             return new Response(JSON.stringify(user), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -291,20 +291,20 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             const members = db.query(`
                 SELECT 
                     u.id,
                     u.full_name, 
-                    u.level, 
+                    u.user_level, 
                     u.physical_address, 
                     u.email, 
                     u.phone_number,
@@ -364,16 +364,16 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
-            const users = db.query("SELECT id, full_name, email, level, phone_number, physical_address FROM users ORDER BY id").all();
+            const users = db.query("SELECT id, full_name, email, user_level, phone_number, physical_address FROM users ORDER BY id").all();
             return new Response(JSON.stringify(users), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -387,21 +387,21 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
                 const { userId, newLevel } = body;
 
-                db.run("UPDATE users SET level = $level WHERE id = $id", {
-                    $level: newLevel,
+                db.run("UPDATE users SET user_level = $user_level WHERE id = $id", {
+                    $user_level: newLevel,
                     $id: userId
                 } as any);
 
@@ -421,14 +421,14 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             const tags = db.query(`
                 SELECT 
@@ -451,23 +451,23 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
-                const { id, description, hazard_level_id, level } = body;
+                const { id, description, hazard_level_id, access_level } = body;
 
-                db.run("UPDATE tags SET description = $description, hazard_level_id = $hazard_level_id, level = $level WHERE id = $id", {
+                db.run("UPDATE tags SET description = $description, hazard_level_id = $hazard_level_id, access_level = $access_level WHERE id = $id", {
                     $description: description,
                     $hazard_level_id: parseInt(hazard_level_id),
-                    $level: parseInt(level),
+                    $access_level: parseInt(access_level),
                     $id: id
                 } as any);
 
@@ -490,24 +490,24 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
-                const { name, description, hazard_level_id, level, weather_id, person_in_charge } = body;
+                const { name, description, hazard_level_id, access_level, weather_id, person_in_charge } = body;
 
-                db.run("UPDATE tags SET name = $name, description = $description, hazard_level_id = $hazard_level_id, level = $level, weather_id = $weather_id, person_in_charge = $person_in_charge WHERE id = $id", {
+                db.run("UPDATE tags SET name = $name, description = $description, hazard_level_id = $hazard_level_id, access_level = $access_level, weather_id = $weather_id, person_in_charge = $person_in_charge WHERE id = $id", {
                     $name: name,
                     $description: description,
                     $hazard_level_id: parseInt(hazard_level_id),
-                    $level: parseInt(level),
+                    $access_level: parseInt(access_level),
                     $weather_id: parseInt(weather_id),
                     $person_in_charge: person_in_charge,
                     $id: tagId
@@ -540,25 +540,25 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
-                const { full_name, email, phone_number, physical_address, level } = body;
+                const { full_name, email, phone_number, physical_address, user_level } = body;
 
-                db.run("UPDATE users SET full_name = $full_name, email = $email, phone_number = $phone_number, physical_address = $physical_address, level = $level WHERE id = $id", {
+                db.run("UPDATE users SET full_name = $full_name, email = $email, phone_number = $phone_number, physical_address = $physical_address, user_level = $user_level WHERE id = $id", {
                     $full_name: full_name,
                     $email: email,
                     $phone_number: phone_number,
                     $physical_address: physical_address,
-                    $level: level,
+                    $user_level: user_level,
                     $id: userId
                 } as any);
 
@@ -579,14 +579,14 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+            if ((session.user_level || 0) < 1) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
 
             const userIdStr = url.pathname.split('/')[3];
             if (!userIdStr) {
@@ -620,14 +620,14 @@ const server = Bun.serve<WebSocketData>({
             }
 
             const session = db.query(`
-                SELECT s.user_id, u.level 
+                SELECT s.user_id, u.user_level 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
-            `).get({ $id: sessionId }) as { user_id: number, level: number } | null;
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
 
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
-            if ((session.level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden - Requires Zone Admin level" }), { status: 403 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden - Requires Zone Admin level" }), { status: 403 });
 
             try {
                 const body = await req.json() as any;
@@ -731,7 +731,7 @@ const server = Bun.serve<WebSocketData>({
                         WHERE p.tag_id = t.id
                     ), CURRENT_TIMESTAMP)
                     FROM tags t
-                    WHERE t.level <= ?
+                    WHERE t.access_level <= ?
                 `, [userId, userLevel]);
 
                 const tags = db.query(`
@@ -748,7 +748,7 @@ const server = Bun.serve<WebSocketData>({
                             ), '1970-01-01 00:00:00'))
                         ), 0) as unread_count
                     FROM tags t
-                    WHERE t.level <= ?
+                    WHERE t.access_level <= ?
                     ORDER BY t.name
                 `).all(userId, userLevel) as any;
                 ws.send(JSON.stringify({ type: "tags", tags }));
@@ -834,7 +834,7 @@ const server = Bun.serve<WebSocketData>({
                             WHERE p.tag_id = t.id
                         ), CURRENT_TIMESTAMP)
                         FROM tags t
-                        WHERE t.level <= ?
+                        WHERE t.access_level <= ?
                     `, [userId, userLevel]);
 
                     const tags = db.query(`
@@ -851,7 +851,7 @@ const server = Bun.serve<WebSocketData>({
                                 ), '1970-01-01 00:00:00'))
                             ), 0) as unread_count
                         FROM tags t
-                        WHERE t.level <= ?
+                        WHERE t.access_level <= ?
                         ORDER BY t.name
                     `).all(userId, userLevel) as any;
                     ws.send(JSON.stringify({ type: "tags", tags }));
