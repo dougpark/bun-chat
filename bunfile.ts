@@ -24,13 +24,18 @@ async function syncAssets() {
         for await (const relativePath of allFiles.scan(ASSETS_SRC)) {
             // This gives you "static/css/style.css" directly
             const src = `${ASSETS_SRC}/${relativePath}`;
+            const srcFile = file(src);
+
+            // Skip directories - only process files
+            if (!(await srcFile.exists())) continue;
+
             const dest = `${DIST_DIR}/${relativePath}`;
 
             // Ensure the folder structure exists for this file
             const destDir = dest.substring(0, dest.lastIndexOf("/"));
             await mkdir(destDir, { recursive: true });
 
-            await write(dest, file(src));
+            await write(dest, srcFile);
         }
         console.log(`✅ syncAssets Successful: All assets from ${ASSETS_SRC} copied to ${DIST_DIR}`);
     } catch (e) {

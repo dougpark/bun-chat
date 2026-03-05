@@ -293,9 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const bgColor = hazardLevel.bg;
     announcementDisplay.style.borderColor = borderColor;
     announcementDisplay.style.backgroundColor = bgColor + "20";
-    announcementLevelBadge.textContent = hazardLevel.label;
-    announcementLevelBadge.style.backgroundColor = hazardLevel.hex;
-    announcementLevelBadge.style.color = "white";
     let timestamp = announcement.created_at;
     if (typeof timestamp === "string" && !timestamp.includes("Z") && !timestamp.includes("+")) {
       timestamp = timestamp.replace(" ", "T") + "Z";
