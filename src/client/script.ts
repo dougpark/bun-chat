@@ -346,9 +346,9 @@ document.addEventListener('DOMContentLoaded', (): void => {
         announcementDisplay.style.backgroundColor = bgColor + '20'; // Add transparency
 
         // Update level badge
-        announcementLevelBadge.textContent = hazardLevel.label;
-        announcementLevelBadge.style.backgroundColor = hazardLevel.hex;
-        announcementLevelBadge.style.color = 'white';
+        // announcementLevelBadge.textContent = hazardLevel.label;
+        // announcementLevelBadge.style.backgroundColor = hazardLevel.hex;
+        // announcementLevelBadge.style.color = 'white';
 
         // Format metadata
         let timestamp = announcement.created_at;

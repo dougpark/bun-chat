@@ -1,11 +1,13 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-* 
+* dashboard - online section and total members section
+* dashboard - detect disconnected and offer button to reconnect
+* users table - add a column for description/ to show on member list
 * check-in history table and user and admin updates and close
 * 
 * reactions to a post - up, down, seen, done
-* level >=2 public message in dashboard from admin menu
+
 
 ### Optimization Tasks
 * In your renderMessage function, check how many messages are in the container. If it's over 200, remove the oldest one before adding the newest one.
@@ -21,8 +23,8 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 - profile photos
 - browser to phone notifications iphone/android
 - admin and pic
-- to-do per tag
 - llm integration
+- EPrep documents/wikipedia access
 
 ### Nice to have Features
 - emoji picker
@@ -36,6 +38,7 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 ### Completed
 done - if any help then show banner on top of home with button to member list
 done - member list count of help status
+* done - level >=2 public message in dashboard from admin menu
 
 * done - admin verify a user
 * done - Implement user-access levels

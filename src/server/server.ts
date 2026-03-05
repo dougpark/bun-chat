@@ -119,6 +119,11 @@ const server = Bun.serve<WebSocketData>({
             return new Response(Bun.file(filePath));
         }
 
+        if (url.pathname.startsWith("/fav/")) {
+            const filePath = `./public${url.pathname}`;
+            return new Response(Bun.file(filePath));
+        }
+
         if (url.pathname.startsWith("/vendor/")) {
             const filePath = `./public${url.pathname}`;
             return new Response(Bun.file(filePath));
