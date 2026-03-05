@@ -1,46 +1,46 @@
 import { file, write, Glob } from "bun";
 import { watch } from "fs";
-import { mkdir } from "node:fs/promises";
+import { rm, mkdir } from "node:fs/promises";
 
 // Configuration
-const ASSET_FOLDERS = ["fav", "static", "vendor"];
+
 const CLIENT_SRC = "./src/client";
+const ASSETS_SRC = `${CLIENT_SRC}/assets`;
 const MASTER_TEMPLATE = `${CLIENT_SRC}/template.html`;
 const COMPONENTS_DIR = `${CLIENT_SRC}/components`;
 const DIST_DIR = "./public";
 const INDEX_FILE = `${DIST_DIR}/index.html`;
 
-
-// Sync static asset folders (fav, static, vendor) to the public directory
+// Sync static asset folders to the public directory
 
 async function syncAssets() {
-    const assetFolders = ASSET_FOLDERS;
+    try {
+        // 1. Clean and recreate the public folder
+        await rm(DIST_DIR, { recursive: true, force: true });
+        await mkdir(DIST_DIR, { recursive: true });
 
-    for (const folder of assetFolders) {
-        const srcPath = `./src/client/${folder}`;
-        const distPath = `./public/${folder}`;
+        // 2. Use Glob to find all files in the assets folder and copy them over while preserving the folder structure
+        const allFiles = new Glob("**/*");
+        for await (const relativePath of allFiles.scan(ASSETS_SRC)) {
+            // This gives you "static/css/style.css" directly
+            const src = `${ASSETS_SRC}/${relativePath}`;
+            const dest = `${DIST_DIR}/${relativePath}`;
 
-        // Ensure the destination folder exists
-        await mkdir(distPath, { recursive: true });
+            // Ensure the folder structure exists for this file
+            const destDir = dest.substring(0, dest.lastIndexOf("/"));
+            await mkdir(destDir, { recursive: true });
 
-        // Find every file in the source folder
-        const glob = new Glob("**/*");
-        const scanner = glob.scan(srcPath);
-        for await (const fileName of scanner) {
-            const srcFile = file(`${srcPath}/${fileName}`);
-            const distFile = `${distPath}/${fileName}`;
-
-            // Efficiently copy the file
-            await write(distFile, srcFile);
+            await write(dest, file(src));
         }
+        console.log(`✅ syncAssets Successful: All assets from ${ASSETS_SRC} copied to ${DIST_DIR}`);
+    } catch (e) {
+        console.error("❌ syncAssets failed:", e);
     }
-    console.log("📂 Assets synced to public.");
 }
 
 // Client-side build script to assemble index.html from components
 
 async function assembleHTML() {
-    console.log("🛠️  Assembling Emergency Chat...");
 
     try {
         // 1. Load the Master Template
@@ -62,7 +62,7 @@ async function assembleHTML() {
             if (await componentFile.exists()) {
                 const componentContent = await componentFile.text();
                 indexContent = indexContent.replace(fullTag, componentContent);
-                console.log(`  ✅ Imported: ${fileName}`);
+                // console.log(`  ✅ Imported: ${fileName}`);
             } else {
                 console.warn(`  ⚠️  Missing Component: ${fileName} at ${componentPath}`);
                 indexContent = indexContent.replace(fullTag, ``);
@@ -77,10 +77,10 @@ async function assembleHTML() {
 
         // 5. Write the final file to the public folder
         await write(INDEX_FILE, minifiedHTML);
-        console.log(`🚀 Build Successful: ${INDEX_FILE} is ready.`);
+        console.log(`🚀 assembleHTML Successful: ${INDEX_FILE} is ready.`);
 
     } catch (error) {
-        console.error("❌ Build Failed:", error);
+        console.error("❌ assembleHTML Build Failed:", error);
         process.exit(1);
     }
 }
@@ -88,22 +88,24 @@ async function assembleHTML() {
 // Client script.ts processing
 async function buildClientJS() {
     const result = await Bun.build({
-        entrypoints: ["./src/client/script.ts"],
-        outdir: "./public/static",
+        entrypoints: [`${CLIENT_SRC}/script.ts`],
+        outdir: `${DIST_DIR}/static`,
         naming: "script.js", // Forces the output name
         minify: false,        // Makes it tiny for production
         target: "browser",   // Ensures it uses browser-friendly code
     });
 
     if (!result.success) {
-        console.error("❌ JS Build failed", result.logs);
+        console.error("❌ buildClientJS Build failed", result.logs);
     } else {
-        console.log("✅ Client JS bundled to public/script.js");
+        console.log("✅ buildClientJS Successful: Client JS bundled to public/static/script.js");
     }
 }
 
 async function runBuild() {
     try {
+        console.log("🛠️  Assembling Emergency Chat...");
+
         // 1. Sync the static folders first
         await syncAssets();
 
@@ -121,15 +123,40 @@ async function runBuild() {
 
 runBuild();
 
-// Watch the entire src directory for changes
+// watch for changes in the client folder and rebuild when they happen
+
+console.log(`👀 Watching for changes in ${CLIENT_SRC}...`);
+
+/// Simple debounce variable
+let isBuilding = false;
+
 const watcher = watch(CLIENT_SRC, { recursive: true }, async (event, filename) => {
-    if (filename) {
-        console.log(`\n📄 Change detected in ${filename}. Reassembling...`);
+    // 1. Guard: Don't trigger if we are already building
+    if (isBuilding) return;
+
+    // 2. Guard: Ignore changes in the output 'public' directory
+    if (filename && filename.startsWith("public")) return;
+
+    // 3. Guard: Only react to actual source files (.ts, .html, .css)
+    const isSourceFile = /\.(ts|js|html|css|json|png|jpg|ico)$/.test(filename || "");
+    if (!isSourceFile) return;
+
+    console.log(`\n📄 Change detected: ${filename}`);
+
+    isBuilding = true;
+
+    try {
         await runBuild();
+    } finally {
+        // Wait a small moment before allowing another build
+        // This stops the "Access" loop
+        setTimeout(() => {
+            isBuilding = false;
+        }, 5000);
     }
 });
 
-console.log(`👀 Watching for changes in ${CLIENT_SRC}...`);
+
 
 // Keep the process alive
 process.on("SIGINT", () => {
