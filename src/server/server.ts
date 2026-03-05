@@ -187,15 +187,16 @@ const server = Bun.serve<WebSocketData>({
                 const hashedPassword = await Bun.password.hash(password);
 
                 const result = db.query(`
-                    INSERT INTO users (email, password_hash, full_name, phone_number, physical_address)
-                    VALUES ($email, $password_hash, $full_name, $phone_number, $physical_address)
+                    INSERT INTO users (email, password_hash, full_name, phone_number, physical_address, user_level)
+                    VALUES ($email, $password_hash, $full_name, $phone_number, $physical_address, $user_level)
                     RETURNING id
                 `).get({
                     $email: email,
                     $password_hash: hashedPassword,
                     $full_name: full_name,
                     $phone_number: phone_number || "",
-                    $physical_address: physical_address || ""
+                    $physical_address: physical_address || "",
+                    $user_level: 3 // Default user level - change to 0 for production Todo
                 }) as { id: number };
 
                 // Create Session
