@@ -6,6 +6,7 @@ import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, Nav
 import { initIcons } from './modules/init-icons.ts';
 import { DOM as DOM_CORE } from './modules/dom-core.ts';
 import { DOM as DOM_AUTH } from './modules/dom-auth.ts';
+import { Dropdowns } from './modules/dropdowns.ts';
 
 // Extend Window interface for global functions
 declare global {
@@ -74,76 +75,11 @@ document.addEventListener('DOMContentLoaded', (): void => {
     // Icon Injection
     initIcons();
 
-
-    // ========== POPULATE LEVEL DROPDOWNS ========== //
-    const initLevelDropdowns = (): void => {
-        const zoneLevelSelect = document.getElementById('zone-level-input') as HTMLSelectElement;
-        const userLevelSelect = document.getElementById('user-level-input') as HTMLSelectElement;
-
-        // Populate both dropdowns with USER_LEVELS
-        [zoneLevelSelect, userLevelSelect].forEach((select: HTMLSelectElement) => {
-            if (select) {
-                // Clear existing options
-                select.innerHTML = '';
-
-                // Add options from USER_LEVELS constant
-                Object.keys(USER_LEVELS).forEach((level: string) => {
-                    const option = document.createElement('option');
-                    option.value = level;
-                    option.textContent = `${level} ${USER_LEVELS[parseInt(level) as keyof typeof USER_LEVELS].label}`;
-                    select.appendChild(option);
-                });
-            }
-        });
-    };
-
-    const initHazardDropdown = (): void => {
-        const hazardSelect = document.getElementById('zone-hazard-level-id-input') as HTMLSelectElement;
-        if (!hazardSelect) return;
-
-        hazardSelect.innerHTML = '';
-
-        Object.keys(ZONE_LEVELS).forEach((levelId: string) => {
-            const option = document.createElement('option');
-            option.value = levelId;
-            option.textContent = `${levelId} ${ZONE_LEVELS[parseInt(levelId) as keyof typeof ZONE_LEVELS].label}`;
-            hazardSelect.appendChild(option);
-        });
-    };
-
-    const initWeatherDropdown = (): void => {
-        const weatherSelect = document.getElementById('zone-weather-id-input') as HTMLSelectElement;
-        if (!weatherSelect) return;
-
-        weatherSelect.innerHTML = '';
-
-        Object.keys(WEATHER_LEVELS).forEach((weatherId: string) => {
-            const option = document.createElement('option');
-            option.value = weatherId;
-            option.textContent = `${weatherId} ${WEATHER_LEVELS[parseInt(weatherId) as keyof typeof WEATHER_LEVELS].name}`;
-            weatherSelect.appendChild(option);
-        });
-    };
-
-    const initAnnouncementHazardDropdown = (): void => {
-        const hazardSelect = document.getElementById('announcement-hazard-level-input') as HTMLSelectElement;
-        if (!hazardSelect) return;
-
-        hazardSelect.innerHTML = '';
-
-        Object.keys(ZONE_LEVELS).forEach((levelId: string) => {
-            const option = document.createElement('option');
-            option.value = levelId;
-            option.textContent = `${ZONE_LEVELS[parseInt(levelId) as keyof typeof ZONE_LEVELS].label}`;
-            hazardSelect.appendChild(option);
-        });
-    };
-
-    // Run it immediately
-    initLevelDropdowns();
-    initHazardDropdown();
-    initWeatherDropdown();
-    initAnnouncementHazardDropdown();
+    // Init dropdowns
+    Dropdowns.initLevelDropdowns();
+    Dropdowns.initHazardDropdown();
+    Dropdowns.initWeatherDropdown();
+    Dropdowns.initAnnouncementHazardDropdown();
 
     // ========== Dashboard Update Logic ========== //
     function updateDashboard(data: DashboardData): void {
