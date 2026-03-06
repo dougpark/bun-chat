@@ -2,81 +2,10 @@
 
 import { ICONS } from './modules/icons.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
-
-// Type Definitions
-interface DashboardData {
-    total_online?: number;
-    members_count?: number;
-    recently_ok?: number;
-    help_alerts?: number;
-    help_count?: number;
-    zone_alerts?: number;
-    non_green_count?: number;
-    highest_severity?: number;
-    announcement?: Announcement;
-}
-
-interface Announcement {
-    id: number;
-    announcement_text: string;
-    hazard_level_id: number;
-    created_by_user_id?: number;
-    created_by_user_name: string;
-    created_at: string;
-    is_active: boolean;
-    cleared_at?: string;
-    cleared_by_user_id?: number;
-    cleared_by_user_name?: string;
-}
-
-interface Post {
-    id?: number;
-    content: string;
-    userName: string;
-    tagName: string;
-    timestamp: string;
-}
-
-interface Tag {
-    id: number;
-    name: string;
-    description?: string;
-    hazard_level_id: number;
-    access_level?: number;
-    unread_count?: number;
-    last_viewed_at?: string;
-}
-
-interface User {
-    id: number;
-    name: string;
-    full_name: string;
-    email: string;
-    phone_number?: string;
-    physical_address?: string;
-    user_level: number;
-}
-
-interface Member extends User {
-    timestamp?: string;
-    status?: string;
-    status_id?: number;
-}
-
-interface CheckIn {
-    id: string | number;
-    timestamp: string;
-    status: string;
-    status_id: number;
-}
-
-interface NavigateOptions {
-    onNavigate?: () => void | Promise<void>;
-}
-
-interface ViewConfig {
-    el: HTMLElement | null;
-}
+import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './modules/types.ts';
+import { initIcons } from './modules/init-icons.ts';
+import { DOM as DOM_CORE } from './modules/dom-core.ts';
+import { DOM as DOM_AUTH } from './modules/dom-auth.ts';
 
 // Extend Window interface for global functions
 declare global {
@@ -105,13 +34,8 @@ declare global {
 }
 
 document.addEventListener('DOMContentLoaded', (): void => {
-    // DOM Elements - Core
-    const messageContainer = document.getElementById('message-container') as HTMLDivElement;
-    const postForm = document.getElementById('post-form') as HTMLFormElement;
-    const postContent = document.getElementById('post-content') as HTMLTextAreaElement;
-    const activeTagName = document.getElementById('active-tag-name') as HTMLElement;
-    const connectionStatus = document.getElementById('connection-status') as HTMLDivElement;
-    const zoneList = document.getElementById('zone-list') as HTMLDivElement;
+    // DOM Core Elements Initialization
+    DOM_CORE.init();
 
     // View Management
     const viewHome = document.getElementById('view-home') as HTMLDivElement;
@@ -144,37 +68,12 @@ document.addEventListener('DOMContentLoaded', (): void => {
     const checkinForm = document.getElementById('checkin-form') as HTMLFormElement;
     const checkinStatus = document.getElementById('checkin-status') as HTMLTextAreaElement;
 
-    // Auth Elements
-    const loginForm = document.getElementById('login-form') as HTMLFormElement;
-    const registerForm = document.getElementById('register-form') as HTMLFormElement;
-    const authError = document.getElementById('auth-error') as HTMLDivElement;
-    const profileForm = document.getElementById('profile-form') as HTMLFormElement;
-    const profileMessage = document.getElementById('profile-message') as HTMLDivElement;
+    // DOM Auth Elements Initialization
+    DOM_AUTH.init();
 
-    // ========== ICONS ========== //
-
-    // insert svg icons into DOM at
-
-    const initIcons = (): void => {
-        const inject = (selector: string, iconHtml: string): void => {
-            document.querySelectorAll(selector).forEach((el: Element) => {
-                (el as HTMLElement).innerHTML = iconHtml;
-            });
-        };
-
-        inject('.icon-shield', ICONS.shield);
-        inject('.icon-back', ICONS.back);
-        inject('.icon-send', ICONS.send);
-        inject('.icon-home', ICONS.home);
-        inject('.icon-bell', ICONS.bell);
-        inject('.icon-users', ICONS.users);
-        inject('.icon-settings', ICONS.settings);
-        inject('.icon-admin', ICONS.admin);
-        inject('.icon-zones', ICONS.zones);
-    };
-
-    // Run it immediately
+    // Icon Injection
     initIcons();
+
 
     // ========== POPULATE LEVEL DROPDOWNS ========== //
     const initLevelDropdowns = (): void => {
@@ -546,20 +445,21 @@ document.addEventListener('DOMContentLoaded', (): void => {
     updateNavButtonStates('home');
 
     window.toggleAuthMode = (mode: string): void => {
-        authError.classList.add('hidden');
-        authError.textContent = '';
+        DOM_AUTH.init();
+        DOM_AUTH.authError.classList.add('hidden');
+        DOM_AUTH.authError.textContent = '';
         if (mode === 'register') {
-            loginForm.classList.add('hidden');
-            registerForm.classList.remove('hidden');
+            DOM_AUTH.loginForm.classList.add('hidden');
+            DOM_AUTH.registerForm.classList.remove('hidden');
         } else {
-            loginForm.classList.remove('hidden');
-            registerForm.classList.add('hidden');
+            DOM_AUTH.loginForm.classList.remove('hidden');
+            DOM_AUTH.registerForm.classList.add('hidden');
         }
     };
 
     async function handleAuthSubmit(e: SubmitEvent, url: string): Promise<void> {
         e.preventDefault();
-        authError.classList.add('hidden');
+        DOM_AUTH.authError.classList.add('hidden');
 
         const formData = new FormData(e.target as HTMLFormElement);
         const data = Object.fromEntries(formData.entries());
@@ -578,17 +478,17 @@ document.addEventListener('DOMContentLoaded', (): void => {
                 (e.target as HTMLFormElement).reset();
             } else {
                 const result = await res.json() as Record<string, string>;
-                authError.textContent = result.error || 'Authentication failed';
-                authError.classList.remove('hidden');
+                DOM_AUTH.authError.textContent = result.error || 'Authentication failed';
+                DOM_AUTH.authError.classList.remove('hidden');
             }
         } catch (err) {
-            authError.textContent = 'Network error occurred';
-            authError.classList.remove('hidden');
+            DOM_AUTH.authError.textContent = 'Network error occurred';
+            DOM_AUTH.authError.classList.remove('hidden');
         }
     }
 
-    loginForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/login'));
-    registerForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/register'));
+    DOM_AUTH.loginForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/login'));
+    DOM_AUTH.registerForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/register'));
 
     // Profile Logic
     window.openProfile = async (): Promise<void> => {
@@ -618,9 +518,9 @@ document.addEventListener('DOMContentLoaded', (): void => {
         navigateTo('profile');
     };
 
-    profileForm.addEventListener('submit', async (e: Event): Promise<void> => {
+    DOM_AUTH.profileForm.addEventListener('submit', async (e: Event): Promise<void> => {
         e.preventDefault();
-        profileMessage.classList.add('hidden');
+        DOM_AUTH.profileMessage.classList.add('hidden');
 
         const formData = new FormData(e.target as HTMLFormElement);
         const data = Object.fromEntries(formData.entries());
@@ -633,19 +533,19 @@ document.addEventListener('DOMContentLoaded', (): void => {
             });
 
             if (res.ok) {
-                profileMessage.textContent = 'Profile updated successfully!';
-                profileMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
-                profileMessage.classList.remove('hidden');
+                DOM_AUTH.profileMessage.textContent = 'Profile updated successfully!';
+                DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
+                DOM_AUTH.profileMessage.classList.remove('hidden');
             } else {
                 const result = await res.json() as Record<string, string>;
-                profileMessage.textContent = result.error || 'Update failed';
-                profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
-                profileMessage.classList.remove('hidden');
+                DOM_AUTH.profileMessage.textContent = result.error || 'Update failed';
+                DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+                DOM_AUTH.profileMessage.classList.remove('hidden');
             }
         } catch (err) {
-            profileMessage.textContent = 'Network error';
-            profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
-            profileMessage.classList.remove('hidden');
+            DOM_AUTH.profileMessage.textContent = 'Network error';
+            DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
+            DOM_AUTH.profileMessage.classList.remove('hidden');
         }
     });
 
@@ -704,7 +604,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
                     ws.send(JSON.stringify({ type: 'requestTags' }));
                 }
             } else if (data.type === 'history') {
-                messageContainer.innerHTML = ''; // Clear previous messages
+                DOM_CORE.messageContainer.innerHTML = ''; // Clear previous messages
                 (data.posts as Post[]).forEach((post: Post) => addMessageToChat(post));
             } else if (data.type === 'error') {
                 alert(data.message);
@@ -736,13 +636,13 @@ document.addEventListener('DOMContentLoaded', (): void => {
     // UI Logic: Navigation
     window.openZone = (tagName: string): void => {
         currentTag = tagName;
-        activeTagName.textContent = tagName;
+        DOM_CORE.activeTagName.textContent = tagName;
 
         const tag = allTags.find((t: Tag) => t.name === tagName);
         if (tag) updateHeaderStyle(tag.hazard_level_id);
 
         // Clear previous messages
-        messageContainer.innerHTML = '';
+        DOM_CORE.messageContainer.innerHTML = '';
 
         // Navigate to chat view
         navigateTo('chat');
@@ -1172,15 +1072,15 @@ document.addEventListener('DOMContentLoaded', (): void => {
     };
 
     // UI Logic: Forms
-    postForm.addEventListener('submit', (e: Event): void => {
+    DOM_CORE.postForm.addEventListener('submit', (e: Event): void => {
         e.preventDefault();
-        const content = postContent.value.trim();
+        const content = DOM_CORE.postContent.value.trim();
         if (content && ws) {
             // Assume authentication is handled via cookie or session logic on server for now
             // or we'd send a token. relying on ws.data for now.
             const message = { type: 'post', content: content, tag: currentTag };
             ws.send(JSON.stringify(message));
-            postContent.value = '';
+            DOM_CORE.postContent.value = '';
         }
     });
 
@@ -1208,30 +1108,30 @@ document.addEventListener('DOMContentLoaded', (): void => {
             <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
         `;
 
-        messageContainer.appendChild(messageDiv);
+        DOM_CORE.messageContainer.appendChild(messageDiv);
         scrollToBottom();
     }
 
     function scrollToBottom(): void {
-        messageContainer.scrollTop = messageContainer.scrollHeight;
+        DOM_CORE.messageContainer.scrollTop = DOM_CORE.messageContainer.scrollHeight;
     }
 
     function updateConnectionStatus(isOnline: boolean): void {
-        if (!connectionStatus) return;
+        if (!DOM_CORE.connectionStatus) return;
 
         if (isOnline) {
-            connectionStatus.classList.remove('bg-red-500');
-            connectionStatus.classList.add('bg-emerald-400', 'animate-pulse');
+            DOM_CORE.connectionStatus.classList.remove('bg-red-500');
+            DOM_CORE.connectionStatus.classList.add('bg-emerald-400', 'animate-pulse');
         } else {
-            connectionStatus.classList.remove('bg-emerald-400', 'animate-pulse');
-            connectionStatus.classList.add('bg-red-500');
+            DOM_CORE.connectionStatus.classList.remove('bg-emerald-400', 'animate-pulse');
+            DOM_CORE.connectionStatus.classList.add('bg-red-500');
         }
     }
 
     // Helper: Render Zone List
     function renderZoneList(tags: Tag[]): void {
-        if (!zoneList) return;
-        zoneList.innerHTML = '';
+        if (!DOM_CORE.zoneList) return;
+        DOM_CORE.zoneList.innerHTML = '';
 
         tags.forEach((tag: Tag) => {
             const button = document.createElement('button');
@@ -1270,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
                 </div>
             `;
 
-            zoneList.appendChild(button);
+            DOM_CORE.zoneList.appendChild(button);
         });
     }
 
