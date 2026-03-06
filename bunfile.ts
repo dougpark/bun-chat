@@ -120,6 +120,12 @@ async function runBuild() {
         // 3. Build the client-side JavaScript
         await buildClientJS();
 
+        // 4. Debounce: Wait a moment before allowing another build (prevents "Access" loop)
+        setTimeout(() => {
+            debounceBuild();
+        }, 1000);
+
+
         console.log("🚀 Full Build Complete.");
     } catch (e) {
         console.error("❌ Full Build failed:", e);
@@ -130,41 +136,44 @@ runBuild();
 
 // watch for changes in the client folder and rebuild when they happen
 
-console.log(`👀 Watching for changes in ${CLIENT_SRC}...`);
+
 
 /// Simple debounce variable
 let isBuilding = false;
+function debounceBuild() {
+    console.log(`👀 I'm Watching for changes in ${CLIENT_SRC}...`);
 
-const watcher = watch(CLIENT_SRC, { recursive: true }, async (event, filename) => {
-    // 1. Guard: Don't trigger if we are already building
-    if (isBuilding) return;
-
-    // 2. Guard: Ignore changes in the output 'public' directory
-    if (filename && filename.startsWith("public")) return;
-
-    // 3. Guard: Only react to actual source files (.ts, .html, .css)
-    const isSourceFile = /\.(ts|js|html|css|json|png|jpg|ico)$/.test(filename || "");
-    if (!isSourceFile) return;
-
-    console.log(`\n📄 Change detected: ${filename}`);
-
-    isBuilding = true;
-
-    try {
-        await runBuild();
-    } finally {
-        // Wait a small moment before allowing another build
-        // This stops the "Access" loop
-        setTimeout(() => {
-            isBuilding = false;
-        }, 5000);
-    }
-});
+    const watcher = watch(CLIENT_SRC, { recursive: true }, async (event, filename) => {
+        // 1. Guard: Don't trigger if we are already building
+        if (isBuilding) return;
 
 
 
-// Keep the process alive
-process.on("SIGINT", () => {
-    watcher.close();
-    process.exit();
-});
+        // 2. Guard: Ignore changes in the output 'public' directory
+        if (filename && filename.startsWith("public")) return;
+
+        // 3. Guard: Only react to actual source files (.ts, .html, .css)
+        const isSourceFile = /\.(ts|js|html|css|json|png|jpg|ico)$/.test(filename || "");
+        if (!isSourceFile) return;
+
+        console.log(`\n📄 Change detected: ${filename}`);
+
+        isBuilding = true;
+
+        try {
+            await runBuild();
+        } finally {
+            // Wait a small moment before allowing another build
+            // This stops the "Access" loop
+            setTimeout(() => {
+                isBuilding = false;
+            }, 1000);
+        }
+    });
+
+    // Keep the process alive
+    process.on("SIGINT", () => {
+        watcher.close();
+        process.exit();
+    });
+}

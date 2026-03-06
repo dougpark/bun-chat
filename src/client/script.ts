@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
         announcementDisplay.style.borderColor = borderColor;
         announcementDisplay.style.backgroundColor = bgColor + '20'; // Add transparency
 
+        // tbd remove for now since we're using background color for severity indication
         // Update level badge
         // announcementLevelBadge.textContent = hazardLevel.label;
         // announcementLevelBadge.style.backgroundColor = hazardLevel.hex;

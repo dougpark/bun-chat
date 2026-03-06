@@ -6,7 +6,7 @@
   "scripts": {
     "build": "bun bunfile.ts",
     "dev": "bun bunfile.ts & bun --hot src/server/server.ts",
-    "start": "bun run build && bun src/server/server.ts"
+    "start": "bun run build & bun src/server/server.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
