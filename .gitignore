@@ -1,5 +1,5 @@
 # Ignore public folder (built client assets)
-public
+public/
 
 # Ignore SQLite database files
 *.sqlite
