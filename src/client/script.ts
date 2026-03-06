@@ -8,31 +8,8 @@ import { DOM as DOM_CORE } from './modules/dom-core.ts';
 import { DOM as DOM_AUTH } from './modules/dom-auth.ts';
 import { Dropdowns } from './modules/dropdowns.ts';
 
-// Extend Window interface for global functions
-declare global {
-    interface Window {
-        toggleAuthMode: (mode: string) => void;
-        openProfile: () => Promise<void>;
-        toggleTheme: () => void;
-        openZone: (tagName: string) => void;
-        goHome: () => void;
-        openSettings: () => void;
-        openMembers: () => Promise<void>;
-        toggleHelpFilter: () => void;
-        viewCheckInHistory: (userId: number, memberName: string) => Promise<void>;
-        openCheckIn: () => void;
-        submitCheckIn: (statusType: string) => Promise<void>;
-        logout: () => void;
-        openAdmin: () => void;
-        openAdminSection: (section: string) => Promise<void>;
-        updateUserLevel: (userId: number, newLevel: string | number) => Promise<void>;
-        openUserEdit: (userId: number) => Promise<void>;
-        closeUserEdit: () => void;
-        openZoneEdit: (zoneId: number) => Promise<void>;
-        closeZoneEdit: () => void;
-        clearCurrentAnnouncement: () => Promise<void>;
-    }
-}
+// Global Declarations
+// Defined in globals.d.ts, 
 
 document.addEventListener('DOMContentLoaded', (): void => {
     // DOM Core Elements Initialization
