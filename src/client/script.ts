@@ -1,7 +1,7 @@
 // src/client/script.ts
 
 import { ICONS } from './modules/icons.js';
-import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from './modules/constants.js';
+import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
 
 // Type Definitions
 interface DashboardData {
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
         // Get hazard level styling
         const hazardLevel = ZONE_LEVELS[announcement.hazard_level_id as keyof typeof ZONE_LEVELS] || ZONE_LEVELS[1];
         const borderColor = hazardLevel.hex;
-        const bgColor = hazardLevel.bg;
+        const bgColor = hazardLevel.hex;
 
         // Update display styling
         announcementDisplay.style.borderColor = borderColor;
