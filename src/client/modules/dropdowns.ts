@@ -1,6 +1,6 @@
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../../shared/constants.ts';
 
-export namespace Dropdowns {
+export namespace DROPDOWNS {
 
     export const initLevelDropdowns = (): void => {
         const zoneLevelSelect = document.getElementById('zone-level-input') as HTMLSelectElement;

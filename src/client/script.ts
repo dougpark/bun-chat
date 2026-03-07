@@ -1,23 +1,24 @@
 // src/client/script.ts
 
-import { ICONS } from './modules/icons.js';
+// Main client-side script for the Bun Chat application
+// This file initializes the application, manages global state, and handles navigation between views.
+// It also sets up WebSocket communication and defines global functions for authentication, profile management, and more.
+// The code is organized into sections for clarity, and it imports various modules for specific functionalities like dropdowns, announcements, and DOM manipulation.
+//  Note: Global function declarations are defined in src/client/types/globals.d.ts, which is a TypeScript declaration file that describes the shape of global functions without containing their implementations.
+
+// Import necessary modules and types
+
+// import { ICONS_SVG } from './modules/icons_svg.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
 import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
-import { initIcons } from './modules/init-icons.ts';
-import { DOM as DOM_CORE } from './modules/dom-core.ts';
-import { DOM as DOM_AUTH } from './modules/dom-auth.ts';
-import { Dropdowns } from './modules/dropdowns.ts';
-import {
-    displayAnnouncement,
-    fetchAndDisplayAnnouncement,
-    displayCurrentAnnouncement,
-    renderAnnouncementsHistory,
-    clearCurrentAnnouncement,
-    initAnnouncementsForm
-} from './modules/announcements.ts';
+import { ICONS } from './modules/init-icons.ts';
+import { DOM_CORE } from './modules/dom-core.ts';
+import { DOM_AUTH } from './modules/dom-auth.ts';
+import { DROPDOWNS } from './modules/dropdowns.ts';
+import * as ANNOUNCEMENTS from './modules/announcements.ts';
 
-// Global Declarations
-// Defined in globals.d.ts, 
+// Global Declarations are defined in globals.d.ts, 
+
 
 document.addEventListener('DOMContentLoaded', (): void => {
     // DOM Core Elements Initialization
@@ -58,13 +59,14 @@ document.addEventListener('DOMContentLoaded', (): void => {
     DOM_AUTH.init();
 
     // Icon Injection
-    initIcons();
+    ICONS.initIcons();
+
 
     // Init dropdowns
-    Dropdowns.initLevelDropdowns();
-    Dropdowns.initHazardDropdown();
-    Dropdowns.initWeatherDropdown();
-    Dropdowns.initAnnouncementHazardDropdown();
+    DROPDOWNS.initLevelDropdowns();
+    DROPDOWNS.initHazardDropdown();
+    DROPDOWNS.initWeatherDropdown();
+    DROPDOWNS.initAnnouncementHazardDropdown();
 
     // ========== Dashboard Update Logic ========== //
     function updateDashboard(data: DashboardData): void {
@@ -135,12 +137,12 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
         // Handle announcement if present in data
         if (data.announcement !== undefined) {
-            displayAnnouncement(data.announcement);
+            ANNOUNCEMENTS.displayAnnouncement(data.announcement);
         }
     }
 
     // Call on page load
-    fetchAndDisplayAnnouncement();
+    ANNOUNCEMENTS.fetchAndDisplayAnnouncement();
 
     // ========== CENTRALIZED NAVIGATION SYSTEM ==========
     const navigationStack: string[] = [];
@@ -1139,18 +1141,18 @@ document.addEventListener('DOMContentLoaded', (): void => {
             }
             navigateTo('adminZones');
         } else if (section === 'announcements') {
-            // Fetch Announcements
+            // Fetch ANNOUNCEMENTS
             try {
                 const res = await fetch('/api/announcements');
                 if (res.ok) {
                     const currentAnnouncement: Announcement = await res.json();
-                    displayCurrentAnnouncement(currentAnnouncement);
+                    ANNOUNCEMENTS.displayCurrentAnnouncement(currentAnnouncement);
                 }
 
                 const historyRes = await fetch('/api/admin/announcements');
                 if (historyRes.ok) {
                     const history: Announcement[] = await historyRes.json();
-                    renderAnnouncementsHistory(history);
+                    ANNOUNCEMENTS.renderAnnouncementsHistory(history);
                 }
             } catch (e) {
                 console.error('Error fetching announcements:', e);
@@ -1403,8 +1405,8 @@ document.addEventListener('DOMContentLoaded', (): void => {
     }
 
     // ========== ANNOUNCEMENTS MANAGEMENT ========== //
-    window.clearCurrentAnnouncement = clearCurrentAnnouncement;
-    initAnnouncementsForm();
+    window.clearCurrentAnnouncement = ANNOUNCEMENTS.clearCurrentAnnouncement;
+    ANNOUNCEMENTS.initAnnouncementsForm();
 
 
 });

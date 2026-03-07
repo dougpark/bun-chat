@@ -1,21 +1,22 @@
-import { ICONS } from './icons.js';
+import { ICONS_SVG } from './icons_svg.js';
 
-const initIcons = (): void => {
-    const inject = (selector: string, iconHtml: string): void => {
-        document.querySelectorAll(selector).forEach((el: Element) => {
-            (el as HTMLElement).innerHTML = iconHtml;
-        });
+export namespace ICONS {
+    export const initIcons = (): void => {
+        const inject = (selector: string, iconHtml: string): void => {
+            document.querySelectorAll(selector).forEach((el: Element) => {
+                (el as HTMLElement).innerHTML = iconHtml;
+            });
+        };
+
+        inject('.icon-shield', ICONS_SVG.shield);
+        inject('.icon-back', ICONS_SVG.back);
+        inject('.icon-send', ICONS_SVG.send);
+        inject('.icon-home', ICONS_SVG.home);
+        inject('.icon-bell', ICONS_SVG.bell);
+        inject('.icon-users', ICONS_SVG.users);
+        inject('.icon-settings', ICONS_SVG.settings);
+        inject('.icon-admin', ICONS_SVG.admin);
+        inject('.icon-zones', ICONS_SVG.zones);
     };
-
-    inject('.icon-shield', ICONS.shield);
-    inject('.icon-back', ICONS.back);
-    inject('.icon-send', ICONS.send);
-    inject('.icon-home', ICONS.home);
-    inject('.icon-bell', ICONS.bell);
-    inject('.icon-users', ICONS.users);
-    inject('.icon-settings', ICONS.settings);
-    inject('.icon-admin', ICONS.admin);
-    inject('.icon-zones', ICONS.zones);
-};
-
-export { initIcons };
+}
+// export { initIcons };
