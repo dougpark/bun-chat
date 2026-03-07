@@ -2,7 +2,7 @@
 
 import { ICONS } from './modules/icons.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
-import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './modules/types.ts';
+import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
 import { initIcons } from './modules/init-icons.ts';
 import { DOM as DOM_CORE } from './modules/dom-core.ts';
 import { DOM as DOM_AUTH } from './modules/dom-auth.ts';
