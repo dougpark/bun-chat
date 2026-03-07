@@ -16,10 +16,11 @@ import { DOM_CORE } from './modules/dom-core.ts';
 import { DOM_AUTH } from './modules/dom-auth.ts';
 import { DROPDOWNS } from './modules/dropdowns.ts';
 import * as ANNOUNCEMENTS from './modules/announcements.ts';
+import * as AUTH from './modules/auth.ts';
 
 // Global Declarations are defined in globals.d.ts, 
 
-
+// Wait for DOM content to be fully loaded before initializing the application
 document.addEventListener('DOMContentLoaded', (): void => {
     // DOM Core Elements Initialization
     DOM_CORE.init();
@@ -270,151 +271,27 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
     let currentTag = '#general';
     let allTags: Tag[] = [];
-    let currentUserLevel = 0;
-    let currentUserName = '';
     let allZones: Tag[] = [];
     let currentEditingZoneId: number | null = null;
     let allUsers: User[] = [];
     let currentEditingUserId: number | null = null;
     let allMembers: Member[] = [];
 
-    // Auth Logic
-    async function checkAuth(): Promise<void> {
-        try {
-            const res = await fetch('/api/me');
-            if (res.ok) {
-                viewAuth.classList.add('hidden');
+    // ========== AUTH LOGIC ========== //
+    const authConfig = {
+        viewAuth,
+        navAdmin,
+        onAuthSuccess: () => initWebSocket()
+    };
 
-                const user: User = await res.json();
-                currentUserLevel = user.user_level || 0;
-                currentUserName = user.name || 'Admin';
-
-                if ((user.user_level || 0) >= 2) {
-                    navAdmin.classList.remove('hidden');
-                } else {
-                    navAdmin.classList.add('hidden');
-                }
-
-                initWebSocket();
-            } else {
-                viewAuth.classList.remove('hidden');
-            }
-        } catch (e) {
-            console.error('Auth check failed:', e);
-            viewAuth.classList.remove('hidden');
-        }
-    }
-
-    // Call immediately
-    checkAuth();
-
-    // Set initial nav button state for home view
+    AUTH.checkAuth(authConfig);
     updateNavButtonStates('home');
 
-    window.toggleAuthMode = (mode: string): void => {
-        DOM_AUTH.init();
-        DOM_AUTH.authError.classList.add('hidden');
-        DOM_AUTH.authError.textContent = '';
-        if (mode === 'register') {
-            DOM_AUTH.loginForm.classList.add('hidden');
-            DOM_AUTH.registerForm.classList.remove('hidden');
-        } else {
-            DOM_AUTH.loginForm.classList.remove('hidden');
-            DOM_AUTH.registerForm.classList.add('hidden');
-        }
-    };
+    window.toggleAuthMode = (mode: string): void => AUTH.toggleAuthMode(mode);
+    window.openProfile = async (): Promise<void> => AUTH.openProfile(navigateTo);
 
-    async function handleAuthSubmit(e: SubmitEvent, url: string): Promise<void> {
-        e.preventDefault();
-        DOM_AUTH.authError.classList.add('hidden');
-
-        const formData = new FormData(e.target as HTMLFormElement);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                // Success
-                viewAuth.classList.add('hidden');
-                initWebSocket();
-                (e.target as HTMLFormElement).reset();
-            } else {
-                const result = await res.json() as Record<string, string>;
-                DOM_AUTH.authError.textContent = result.error || 'Authentication failed';
-                DOM_AUTH.authError.classList.remove('hidden');
-            }
-        } catch (err) {
-            DOM_AUTH.authError.textContent = 'Network error occurred';
-            DOM_AUTH.authError.classList.remove('hidden');
-        }
-    }
-
-    DOM_AUTH.loginForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/login'));
-    DOM_AUTH.registerForm.addEventListener('submit', (e: Event) => handleAuthSubmit(e as SubmitEvent, '/api/register'));
-
-    // Profile Logic
-    window.openProfile = async (): Promise<void> => {
-        // Fetch user profile data
-        try {
-            const res = await fetch('/api/me');
-            if (res.ok) {
-                const user: User = await res.json();
-                const form = document.getElementById('profile-form') as HTMLFormElement;
-                (form.elements.namedItem('full_name') as HTMLInputElement).value = user.full_name || '';
-                (form.elements.namedItem('email') as HTMLInputElement).value = user.email || '';
-                (form.elements.namedItem('phone_number') as HTMLInputElement).value = user.phone_number || '';
-                (form.elements.namedItem('physical_address') as HTMLInputElement).value = user.physical_address || '';
-
-                // Update Level Display
-                const levelDisplay = document.getElementById('profile-level-display');
-                if (levelDisplay) {
-                    const level = user.user_level || 0;
-                    const levelLabel = USER_LEVELS[level as keyof typeof USER_LEVELS]?.label || 'Unknown';
-                    levelDisplay.textContent = `${level} - ${levelLabel}`;
-                }
-            }
-        } catch (e) {
-            console.error('Failed to fetch profile', e);
-        }
-
-        navigateTo('profile');
-    };
-
-    DOM_AUTH.profileForm.addEventListener('submit', async (e: Event): Promise<void> => {
-        e.preventDefault();
-        DOM_AUTH.profileMessage.classList.add('hidden');
-
-        const formData = new FormData(e.target as HTMLFormElement);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            const res = await fetch('/api/profile', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                DOM_AUTH.profileMessage.textContent = 'Profile updated successfully!';
-                DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-green-600 dark:text-green-400';
-                DOM_AUTH.profileMessage.classList.remove('hidden');
-            } else {
-                const result = await res.json() as Record<string, string>;
-                DOM_AUTH.profileMessage.textContent = result.error || 'Update failed';
-                DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
-                DOM_AUTH.profileMessage.classList.remove('hidden');
-            }
-        } catch (err) {
-            DOM_AUTH.profileMessage.textContent = 'Network error';
-            DOM_AUTH.profileMessage.className = 'text-center text-sm mt-2 text-red-600 dark:text-red-400';
-            DOM_AUTH.profileMessage.classList.remove('hidden');
-        }
-    });
+    AUTH.initAuthForms(authConfig);
+    AUTH.initProfileForm();
 
     // Theme Logic
     const html = document.documentElement;
@@ -677,7 +554,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
         const feedbackMessage = document.getElementById('feedback-message') as HTMLDivElement;
 
         if (feedbackPanel) {
-            if (currentUserLevel >= 2) {
+            if (AUTH.currentUserLevel >= 2) {
                 feedbackPanel.classList.remove('hidden');
                 feedbackText.value = '';
                 feedbackMessage.classList.add('hidden');
@@ -759,7 +636,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
             id: 'admin-' + Date.now(),
             status_id: statusId,
             timestamp: now.toISOString(),
-            status: `[${currentUserName}] ${feedbackText}`
+            status: `[${AUTH.currentUserName}] ${feedbackText}`
         };
 
         const div = createCheckInHistoryEntry(fakeCheckin);
