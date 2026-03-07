@@ -11,7 +11,7 @@
 // import { ICONS_SVG } from './modules/icons_svg.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
 import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
-import { ICONS } from './modules/init-icons.ts';
+import { ICONS } from './modules/icons-init.ts';
 import { DOM_CORE } from './modules/dom-core.ts';
 import { DOM_AUTH } from './modules/dom-auth.ts';
 import { DROPDOWNS } from './modules/dropdowns.ts';

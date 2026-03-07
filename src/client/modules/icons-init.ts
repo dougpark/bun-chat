@@ -1,4 +1,4 @@
-import { ICONS_SVG } from './icons_svg.js';
+import { ICONS_SVG } from './icons-svg.js';
 
 export namespace ICONS {
     export const initIcons = (): void => {
