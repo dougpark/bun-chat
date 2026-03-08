@@ -12,6 +12,7 @@ db.run(`
     email TEXT UNIQUE,
     password_hash TEXT,
     user_level INTEGER DEFAULT 0, -- userlevel: 0=regular user, 1=member, 2=zone admin, 3=system admin
+    bio TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
@@ -28,6 +29,9 @@ try {
 } catch (e) { }
 try {
   db.run("ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+} catch (e) { }
+try {
+  db.run("ALTER TABLE users ADD COLUMN bio TEXT");
 } catch (e) { }
 
 db.run(`

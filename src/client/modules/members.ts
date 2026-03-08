@@ -2,6 +2,7 @@
 import { USER_LEVELS } from '../../shared/constants.ts';
 import type { Member } from '../types/types.ts';
 import * as NAV from './navigation.ts';
+import { linkify } from './linkify.ts';
 
 // ========== STATE ========== //
 let allMembers: Member[] = [];
@@ -129,6 +130,7 @@ function renderMembersList(members: Member[]): void {
             <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mb-1">${member.email}</p>
             <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${member.phone_number || 'N/A'}</p>
             <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">${member.physical_address || 'N/A'}</p>
+            ${member.bio ? `<p class="text-xs text-slate-600 dark:text-vsdark-text-dim mt-2">${linkify(member.bio)}</p>` : ''}
             ${checkinHTML}
         `;
         membersList.appendChild(div);

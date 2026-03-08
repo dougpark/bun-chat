@@ -283,7 +283,7 @@ const server = Bun.serve<WebSocketData>({
             const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP").get({ $id: sessionId }) as { user_id: number } | null;
             if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
 
-            const user = db.query("SELECT id, full_name, email, phone_number, physical_address, user_level FROM users WHERE id = $id").get({ $id: session.user_id });
+            const user = db.query("SELECT id, full_name, email, phone_number, physical_address, user_level, bio FROM users WHERE id = $id").get({ $id: session.user_id });
             return new Response(JSON.stringify(user), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -314,6 +314,7 @@ const server = Bun.serve<WebSocketData>({
                     u.physical_address, 
                     u.email, 
                     u.phone_number,
+                    u.bio,
                     c.status_id,
                     c.status,
                     c.timestamp
@@ -340,17 +341,18 @@ const server = Bun.serve<WebSocketData>({
 
             try {
                 const body = await req.json() as any;
-                const { full_name, phone_number, physical_address, email } = body;
+                const { full_name, phone_number, physical_address, email, bio } = body;
 
                 db.run(`
                     UPDATE users 
-                    SET full_name = $full_name, phone_number = $phone_number, physical_address = $physical_address, email = $email
+                    SET full_name = $full_name, phone_number = $phone_number, physical_address = $physical_address, email = $email, bio = $bio
                     WHERE id = $id
                 `, {
                     $full_name: full_name,
                     $phone_number: phone_number,
                     $physical_address: physical_address,
                     $email: email,
+                    $bio: bio || null,
                     $id: session.user_id
                 } as any);
 

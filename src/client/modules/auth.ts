@@ -116,6 +116,7 @@ export async function openProfile(): Promise<void> {
             (form.elements.namedItem('email') as HTMLInputElement).value = user.email || '';
             (form.elements.namedItem('phone_number') as HTMLInputElement).value = user.phone_number || '';
             (form.elements.namedItem('physical_address') as HTMLInputElement).value = user.physical_address || '';
+            (form.elements.namedItem('bio') as HTMLTextAreaElement).value = user.bio || '';
 
             // Update Level Display
             const levelDisplay = document.getElementById('profile-level-display');

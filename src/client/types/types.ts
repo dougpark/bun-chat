@@ -52,6 +52,7 @@ export interface User {
     phone_number?: string;
     physical_address?: string;
     user_level: number;
+    bio?: string;
 }
 
 export interface Member extends User {
