@@ -8,6 +8,22 @@ let currentAnnouncementId: number | null = null;
 // Announcements longer than this threshold are clamped in the banner; a "Read more" button reveals the full text in a modal.
 const READMORE_THRESHOLD = 120;
 
+// Escapes HTML special characters to prevent injection, then wraps http/https URLs in
+// clickable <a> tags. Must escape BEFORE linkifying so injected angle brackets can't
+// smuggle tags through a crafted URL like "https://x.com/<script>alert(1)</script>".
+function linkify(text: string): string {
+    const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    return escaped.replace(
+        /https?:\/\/[^\s<>"']+/g,
+        url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 break-all">${url}</a>`
+    );
+}
+
 // ========== HOME VIEW BANNER ========== //
 export function displayAnnouncement(announcement: Announcement | null): void {
     const announcementContainer = document.getElementById('announcement-container') as HTMLDivElement;
@@ -25,7 +41,8 @@ export function displayAnnouncement(announcement: Announcement | null): void {
 
     // Show announcement
     announcementContainer.classList.remove('hidden');
-    announcementText.textContent = announcement.announcement_text;
+    // Use innerHTML so URLs render as clickable links (linkify escapes HTML first).
+    announcementText.innerHTML = linkify(announcement.announcement_text);
 
     // Get hazard level styling
     const hazardLevel = ZONE_LEVELS[announcement.hazard_level_id as keyof typeof ZONE_LEVELS] || ZONE_LEVELS[1];
@@ -52,7 +69,7 @@ export function displayAnnouncement(announcement: Announcement | null): void {
     const isLong = announcement.announcement_text.length > READMORE_THRESHOLD;
     announcementText.classList.toggle('line-clamp-3', isLong);
     if (readMoreBtn) readMoreBtn.classList.toggle('hidden', !isLong);
-    if (modalText) modalText.textContent = announcement.announcement_text;
+    if (modalText) modalText.innerHTML = linkify(announcement.announcement_text);
     if (modalMeta) modalMeta.textContent = metaText;
 }
 
