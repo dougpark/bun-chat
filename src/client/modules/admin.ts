@@ -83,6 +83,26 @@ export function initAdmin(): void {
 // ========== NAVIGATION ========== //
 export function openAdmin(): void {
     NAV.navigateTo('adminNav');
+    loadAdminDashboard();
+}
+
+async function loadAdminDashboard(): Promise<void> {
+    try {
+        const res = await fetch('/api/admin/dashboard');
+        if (!res.ok) return;
+        const data = await res.json() as {
+            sys_admin_total: number;
+            sys_admin_online: number;
+            zone_admin_total: number;
+            zone_admin_online: number;
+        };
+        (document.getElementById('admin-dash-sys-total') as HTMLElement).textContent = String(data.sys_admin_total);
+        (document.getElementById('admin-dash-sys-online') as HTMLElement).textContent = String(data.sys_admin_online);
+        (document.getElementById('admin-dash-zone-total') as HTMLElement).textContent = String(data.zone_admin_total);
+        (document.getElementById('admin-dash-zone-online') as HTMLElement).textContent = String(data.zone_admin_online);
+    } catch (e) {
+        console.error('Error loading admin dashboard:', e);
+    }
 }
 
 export async function openAdminSection(section: string): Promise<void> {

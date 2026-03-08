@@ -371,6 +371,46 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        if (url.pathname === "/api/admin/dashboard" && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.user_level 
+                FROM sessions s 
+                JOIN users u ON s.user_id = u.id 
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
+
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+            if ((session.user_level || 0) < 2) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+
+            const sysAdminTotal = (db.query("SELECT COUNT(*) as count FROM users WHERE user_level = 3").get() as { count: number }).count;
+            const zoneAdminTotal = (db.query("SELECT COUNT(*) as count FROM users WHERE user_level = 2").get() as { count: number }).count;
+
+            const adminIds = db.query("SELECT id, user_level FROM users WHERE user_level IN (2, 3)").all() as { id: number, user_level: number }[];
+            let sysAdminOnline = 0;
+            let zoneAdminOnline = 0;
+            for (const u of adminIds) {
+                if (onlineConnectionCounts.has(u.id)) {
+                    if (u.user_level === 3) sysAdminOnline++;
+                    else zoneAdminOnline++;
+                }
+            }
+
+            return new Response(JSON.stringify({
+                sys_admin_total: sysAdminTotal,
+                sys_admin_online: sysAdminOnline,
+                zone_admin_total: zoneAdminTotal,
+                zone_admin_online: zoneAdminOnline,
+            }), { headers: { "Content-Type": "application/json" } });
+        }
+
         if (url.pathname === "/api/admin/users" && req.method === "GET") {
             const cookies = getCookies(req);
             const sessionId = cookies["session_id"];

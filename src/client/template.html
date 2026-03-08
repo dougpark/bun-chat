@@ -294,6 +294,28 @@
                 <h1 class="text-xl font-bold">Administration</h1>
             </header>
             <main class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col justify-center items-center">
+
+                <!-- Admin Dashboard -->
+                <div class="w-full max-w-xs bg-white dark:bg-vsdark-surface p-4 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-vsdark-text-secondary mb-3">Admin Dashboard</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 dark:bg-vsdark-input rounded-lg p-3 border border-slate-200 dark:border-vsdark-border-light">
+                            <p class="text-xs font-semibold text-slate-500 dark:text-vsdark-text-secondary mb-1">System Admins</p>
+                            <p class="text-2xl font-bold text-slate-800 dark:text-vsdark-text" id="admin-dash-sys-total">—</p>
+                            <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">
+                                <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span><span id="admin-dash-sys-online">—</span> online
+                            </p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-vsdark-input rounded-lg p-3 border border-slate-200 dark:border-vsdark-border-light">
+                            <p class="text-xs font-semibold text-slate-500 dark:text-vsdark-text-secondary mb-1">Zone Admins</p>
+                            <p class="text-2xl font-bold text-slate-800 dark:text-vsdark-text" id="admin-dash-zone-total">—</p>
+                            <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">
+                                <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span><span id="admin-dash-zone-online">—</span> online
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="btn-admin-users" onclick="openAdminSection('users')"
                     class="w-full max-w-xs py-4 bg-slate-600 text-white rounded-lg font-bold shadow-md hover:bg-slate-700 transition-colors text-lg flex items-center justify-center gap-2">
                     <span class="icon-users"></span>
@@ -305,7 +327,7 @@
                     Zone Admin
                 </button>
                 <button id="btn-admin-announcements" onclick="openAdminSection('announcements')"
-                    class="w-full max-w-xs py-4 bg-amber-600 text-white rounded-lg font-bold shadow-md hover:bg-amber-700 transition-colors text-lg flex items-center justify-center gap-2">
+                    class="w-full max-w-xs py-4 bg-slate-600 text-white rounded-lg font-bold shadow-md hover:bg-slate-700 transition-colors text-lg flex items-center justify-center gap-2">
                     <span class="icon-bell"></span>
                     Announcements
                 </button>
