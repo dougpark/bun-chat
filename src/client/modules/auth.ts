@@ -7,6 +7,7 @@ import * as NAV from './navigation.ts';
 // ========== STATE ========== //
 export let currentUserLevel = 0;
 export let currentUserName = '';
+export let currentUserId = 0;
 
 // ========== TYPE DEFINITIONS ========== //
 export interface AuthConfig {
@@ -26,6 +27,7 @@ export async function checkAuth(config: AuthConfig): Promise<User | null> {
             // Update state
             currentUserLevel = user.user_level || 0;
             currentUserName = user.name || 'Admin';
+            currentUserId = user.id || 0;
 
             if ((user.user_level || 0) >= 2) {
                 config.navAdmin.classList.remove('hidden');

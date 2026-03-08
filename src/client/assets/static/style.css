@@ -108,3 +108,14 @@ body {
     text-decoration-style: dotted;
     text-underline-offset: 2px;
 }
+
+/* ========== Superseded post ========== */
+.post-superseded {
+    opacity: 0.45;
+    border-style: dashed !important;
+    pointer-events: none;        /* block new reactions on superseded posts */
+}
+/* Keep the "Post Update" button interactive even on superseded posts */
+.post-superseded .supersede-btn {
+    pointer-events: auto;
+}

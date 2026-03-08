@@ -158,4 +158,8 @@ document.addEventListener('DOMContentLoaded', (): void => {
     // ========== REACTIONS SHEET ========== //
     window.closeReactionsSheet = CHAT.closeReactionsSheet;
 
+    // ========== SUPERSEDE ========== //
+    window.supersedePost = CHAT.supersedePost;
+    window.cancelSupersedeMode = CHAT.cancelSupersedeMode;
+
 });

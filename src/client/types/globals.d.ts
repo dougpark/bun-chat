@@ -30,6 +30,8 @@ declare global {
         openAnnouncementModal: () => void;
         closeAnnouncementModal: () => void;
         closeReactionsSheet: () => void;
+        supersedePost: (oldPostId: number) => void;
+        cancelSupersedeMode: () => void;
     }
 }
 

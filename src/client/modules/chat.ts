@@ -7,11 +7,13 @@ import * as DASHBOARD from './dashboard.ts';
 import * as MEMBERS from './members.ts';
 import { linkify } from './linkify.ts';
 import { ICONS_SVG } from './icons-svg.ts';
+import { currentUserId, currentUserLevel } from './auth.ts';
 
 // ========== STATE ========== //
 let ws: WebSocket | null = null;
 let currentTag = '#general';
 let allTags: Tag[] = [];
+let pendingSupersede: number | null = null; // postId being superseded
 
 let chatHeader: HTMLDivElement;
 let hazardBar: HTMLDivElement;
@@ -25,14 +27,62 @@ export function initChat(): void {
     chatHeader = document.getElementById('chat-header') as HTMLDivElement;
     hazardBar = document.getElementById('hazard-bar') as HTMLDivElement;
 
-    DOM_CORE.postForm.addEventListener('submit', (e: Event): void => {
+    DOM_CORE.postForm.addEventListener('submit', async (e: Event): Promise<void> => {
         e.preventDefault();
         const content = DOM_CORE.postContent.value.trim();
-        if (content && ws) {
+        if (!content) return;
+
+        if (pendingSupersede !== null) {
+            // Post is an update to an existing post — use supersede API
+            const targetId = pendingSupersede;
+            try {
+                const res = await fetch(`/api/posts/${targetId}/supersede`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content }),
+                });
+                if (res.ok) {
+                    DOM_CORE.postContent.value = '';
+                    cancelSupersedeMode();
+                } else {
+                    const err = await res.json() as { error?: string };
+                    alert(err.error || 'Failed to post update');
+                }
+            } catch {
+                alert('Network error — update not sent');
+            }
+        } else if (ws) {
             ws.send(JSON.stringify({ type: 'post', content: content, tag: currentTag }));
             DOM_CORE.postContent.value = '';
         }
     });
+}
+
+export function cancelSupersedeMode(): void {
+    pendingSupersede = null;
+    const banner = document.getElementById('supersede-banner');
+    if (banner) banner.remove();
+    DOM_CORE.postContent.placeholder = 'Type a message…';
+}
+
+export function supersedePost(oldPostId: number): void {
+    pendingSupersede = oldPostId;
+    DOM_CORE.postContent.placeholder = 'Type the updated message…';
+    DOM_CORE.postContent.focus();
+
+    // Show a banner above the form
+    let banner = document.getElementById('supersede-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'supersede-banner';
+        banner.className = 'flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border-t border-amber-200 dark:border-amber-700 text-xs text-amber-700 dark:text-amber-300';
+        DOM_CORE.postForm.insertAdjacentElement('beforebegin', banner);
+    }
+    banner.innerHTML = `
+        <span class="shrink-0 mr-2">${ICONS_SVG.pencil ?? '✏️'}</span>
+        <span class="flex-1">Posting <strong>update</strong> to original message — the original will be dimmed</span>
+        <button type="button" onclick="window.cancelSupersedeMode()" class="ml-auto text-amber-600 dark:text-amber-400 underline">Cancel</button>
+    `;
 }
 
 export function initWebSocket(): void {
@@ -84,6 +134,8 @@ export function initWebSocket(): void {
                 data.thumbsUp as number,
                 data.thumbsDown as number
             );
+        } else if (data.type === 'postSuperseded') {
+            applySupersededStyle(data.oldPostId as number);
         }
     };
 
@@ -141,9 +193,15 @@ function addMessageToChat(post: Post): void {
     const thumbsUp = post.thumbsUp ?? 0;
     const thumbsDown = post.thumbsDown ?? 0;
     const myReaction = post.myReaction ?? null;
+    const isSuperseded = !!post.supersededBy;
+    const isUpdate = !!post.supersedesId;
+    const isOwner = post.userId !== undefined && post.userId === currentUserId;
+    const isAdmin = currentUserLevel >= 2;
+    const canSupersede = (isOwner || isAdmin) && !isSuperseded;
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border animate-fade-in-up';
+    const supersededClass = isSuperseded ? ' post-superseded' : '';
+    messageDiv.className = `bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border animate-fade-in-up${supersededClass}`;
     messageDiv.dataset.postId = String(postId);
     messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
@@ -159,36 +217,67 @@ function addMessageToChat(post: Post): void {
     const upActiveClass = myReaction === 1 ? ' reaction-active-up' : '';
     const downActiveClass = myReaction === -1 ? ' reaction-active-down' : '';
 
+    // Build optional banners
+    const updateBanner = isUpdate
+        ? `<div class="text-[10px] text-amber-600 dark:text-amber-400 font-medium mb-1 flex items-center gap-2">
+               <span class="w-3 h-3 shrink-0 inline-block">${ICONS_SVG.pencil ?? '✏️'}</span>
+               Update to original message
+           </div>`
+        : '';
+
+    const supersededBanner = isSuperseded
+        ? `<div class="text-[10px] text-slate-400 dark:text-vsdark-text-muted font-medium mt-1 flex items-center gap-2">
+               <span class="w-3 h-3 shrink-0 inline-block">${ICONS_SVG.arrowUp ?? '↑'}</span>
+               Superseded — see update below
+           </div>`
+        : '';
+
+    const supersedeBtn = canSupersede
+        ? `<button class="supersede-btn text-[10px] text-slate-400 dark:text-vsdark-text-muted hover:text-amber-500 dark:hover:text-amber-400 underline ml-1 transition-colors" title="Post a correction/update">Post Update</button>`
+        : '';
+
+    // Reaction area — hide on superseded posts (reactions were cleared; re-acknowledgement happens on new post)
+    const reactionsHTML = isSuperseded ? '' : `
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
+                        <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
+                        <span>Agree</span>
+                        <span class="reaction-up-count font-bold${thumbsUp > 0 ? ' reaction-count-tap' : ''}">${thumbsUp > 0 ? thumbsUp : ''}</span>
+                    </button>
+                    <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
+                        <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.check}</span>
+                        <span>Seen</span>
+                        <span class="reaction-down-count font-bold${thumbsDown > 0 ? ' reaction-count-tap' : ''}">${thumbsDown > 0 ? thumbsDown : ''}</span>
+                    </button>
+                </div>`;
+
     messageDiv.innerHTML = `
+        ${updateBanner}
         <div class="flex items-center justify-between gap-2 mb-1">
-            <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
-                    <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
-                    <span>Agree</span>
-                    <span class="reaction-up-count font-bold${thumbsUp > 0 ? ' reaction-count-tap' : ''}">${thumbsUp > 0 ? thumbsUp : ''}</span>
-                </button>
-                <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
-                    <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.check}</span>
-                    <span>Seen</span>
-                    <span class="reaction-down-count font-bold${thumbsDown > 0 ? ' reaction-count-tap' : ''}">${thumbsDown > 0 ? thumbsDown : ''}</span>
-                </button>
-            </div>
+            <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}${supersedeBtn}</p>
+            ${reactionsHTML}
         </div>
         <p class="text-slate-800 dark:text-vsdark-text">${linkify(post.content)}</p>
         <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
+        ${supersededBanner}
     `;
 
-    // Attach click handlers to both buttons
-    const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
-    if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
-    if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
+    // Attach supersede button handler
+    const sBtn = messageDiv.querySelector<HTMLButtonElement>('.supersede-btn');
+    if (sBtn) sBtn.addEventListener('click', () => supersedePost(postId));
 
-    // Attach tap handlers on count spans to show who reacted
-    const upCount = messageDiv.querySelector<HTMLElement>('.reaction-up-count');
-    const downCount = messageDiv.querySelector<HTMLElement>('.reaction-down-count');
-    if (upCount) upCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'agree'); });
-    if (downCount) downCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'seen'); });
+    if (!isSuperseded) {
+        // Attach click handlers to both reaction buttons
+        const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
+        if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
+        if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
+
+        // Attach tap handlers on count spans to show who reacted
+        const upCount = messageDiv.querySelector<HTMLElement>('.reaction-up-count');
+        const downCount = messageDiv.querySelector<HTMLElement>('.reaction-down-count');
+        if (upCount) upCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'agree'); });
+        if (downCount) downCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'seen'); });
+    }
 
     DOM_CORE.messageContainer.appendChild(messageDiv);
     scrollToBottom();
@@ -214,6 +303,24 @@ function react(postId: number, reaction: number, msgDiv: HTMLElement): void {
         updateReactionButtonStyles(msgDiv, current);
     });
     // Count updates arrive via the reactionUpdate WebSocket broadcast
+}
+
+function applySupersededStyle(postId: number): void {
+    const msgDiv = DOM_CORE.messageContainer.querySelector<HTMLElement>(`[data-post-id="${postId}"]`);
+    if (!msgDiv) return;
+    msgDiv.classList.add('post-superseded');
+
+    // Remove reaction pills — acknowledgement shifts to the new post
+    const pillContainer = msgDiv.querySelector('.flex.items-center.gap-1\\.5');
+    if (pillContainer) pillContainer.remove();
+
+    // Add superseded banner if not already present
+    if (!msgDiv.querySelector('.superseded-banner')) {
+        const banner = document.createElement('div');
+        banner.className = 'superseded-banner text-[10px] text-slate-400 dark:text-vsdark-text-muted font-medium mt-1 flex items-center gap-1';
+        banner.innerHTML = `<span class="w-3 h-3 shrink-0 inline-block mr-2">${ICONS_SVG.arrowUp ?? '↑'}</span>Superseded — see update below`;
+        msgDiv.appendChild(banner);
+    }
 }
 
 function updateReactionCounts(postId: number, thumbsUp: number, thumbsDown: number): void {

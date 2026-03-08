@@ -139,8 +139,7 @@ db.run(`
   );
 `);
 
-// post_reactions table — one row per (post, user), reaction: 1=up, -1=down
-// Composite PK prevents duplicate votes; index on post_id for fast count aggregation
+// post_reactions table — one row per (post, user), reaction: 1=up, -1=down// Composite PK prevents duplicate votes; index on post_id for fast count aggregation
 db.run(`
   CREATE TABLE IF NOT EXISTS post_reactions (
     post_id INTEGER NOT NULL,
@@ -152,6 +151,11 @@ db.run(`
   );
 `);
 db.run(`CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);`);
+
+// Add superseded_by to posts if not already present (migration)
+try {
+  db.run("ALTER TABLE posts ADD COLUMN superseded_by INTEGER REFERENCES posts(id)");
+} catch (e) { }
 
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);

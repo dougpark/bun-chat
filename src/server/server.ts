@@ -922,6 +922,94 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Handle POST /api/posts/:id/supersede — mark a post superseded by a new one
+        // Only the original poster or an admin may do this
+        const postSupersedeMatch = url.pathname.match(/^\/api\/posts\/(\d+)\/supersede$/);
+        if (postSupersedeMatch && req.method === "POST") {
+            const oldPostId = parseInt(postSupersedeMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.user_level
+                FROM sessions s JOIN users u ON s.user_id = u.id
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, user_level: number } | null;
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            // Verify caller owns the post or is an admin (level >= 2)
+            const originalPost = db.query(`
+                SELECT p.user_id, t.name as tagName
+                FROM posts p JOIN tags t ON p.tag_id = t.id
+                WHERE p.id = $id
+            `).get({ $id: oldPostId }) as { user_id: number, tagName: string } | null;
+
+            if (!originalPost) return new Response(JSON.stringify({ error: "Post not found" }), { status: 404 });
+            if (originalPost.user_id !== session.user_id && (session.user_level ?? 0) < 2) {
+                return new Response(JSON.stringify({ error: "Forbidden: only the poster or an admin can supersede" }), { status: 403 });
+            }
+
+            try {
+                const body = await req.json() as any;
+                const { content } = body;
+                if (!content?.trim()) return new Response(JSON.stringify({ error: "Content required" }), { status: 400 });
+
+                // Insert the new update post in the same tag
+                const tag = db.query("SELECT id FROM tags WHERE name = $name")
+                    .get({ $name: originalPost.tagName }) as { id: number };
+
+                const newResult = db.query(`
+                    INSERT INTO posts (tag_id, user_id, content)
+                    VALUES ($tagId, $userId, $content)
+                    RETURNING id, timestamp as created_at
+                `).get({ $tagId: tag.id, $userId: session.user_id, $content: content.trim() }) as { id: number, created_at: string };
+
+                // Mark the old post as superseded by the new one
+                db.run("UPDATE posts SET superseded_by = $newId WHERE id = $oldId",
+                    { $newId: newResult.id, $oldId: oldPostId } as any);
+
+                // Clear all reactions on the old post so re-acknowledgement is required
+                db.run("DELETE FROM post_reactions WHERE post_id = $id", { $id: oldPostId } as any);
+
+                const user = db.query("SELECT full_name FROM users WHERE id = $id")
+                    .get({ $id: session.user_id }) as { full_name: string };
+
+                const newPost = {
+                    id: newResult.id,
+                    tagName: originalPost.tagName,
+                    userName: user?.full_name || "Unknown",
+                    content: content.trim(),
+                    timestamp: newResult.created_at,
+                    thumbsUp: 0,
+                    thumbsDown: 0,
+                    supersedesId: oldPostId,
+                };
+
+                // Broadcast the new post to tag subscribers
+                server.publish(originalPost.tagName, JSON.stringify({ type: "newPost", post: newPost }));
+
+                // Broadcast that the old post is now superseded (reactions cleared, dimmed)
+                server.publish(originalPost.tagName, JSON.stringify({
+                    type: "postSuperseded",
+                    oldPostId,
+                    newPostId: newResult.id,
+                }));
+
+                server.publish("postUpdate", JSON.stringify({ type: "postUpdate", tag: originalPost.tagName }));
+
+                return new Response(JSON.stringify({ success: true, newPostId: newResult.id }), {
+                    headers: { "Content-Type": "application/json" }
+                });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         // Handle POST /api/posts/:id/react
         const postReactMatch = url.pathname.match(/^\/api\/posts\/(\d+)\/react$/);
         if (postReactMatch && req.method === "POST") {
@@ -1109,8 +1197,11 @@ const server = Bun.serve<WebSocketData>({
                     const posts = db.query(`
                         SELECT
                             p.id,
+                            p.user_id as userId,
                             p.content,
                             p.timestamp,
+                            p.superseded_by as supersededBy,
+                            (SELECT id FROM posts WHERE superseded_by = p.id LIMIT 1) as supersedesId,
                             u.full_name as userName,
                             COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = 1), 0) as thumbsUp,
                             COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = -1), 0) as thumbsDown,
@@ -1228,6 +1319,7 @@ const server = Bun.serve<WebSocketData>({
 
                 const newPost = {
                     id: result.id,
+                    userId: userId,
                     tagName: tagName,
                     userName: user?.full_name || "Unknown",
                     content: content,

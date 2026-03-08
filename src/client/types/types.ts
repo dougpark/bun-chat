@@ -29,6 +29,7 @@ export interface Announcement {
 
 export interface Post {
     id?: number;
+    userId?: number;           // owner — used to show/hide supersede button
     content: string;
     userName: string;
     tagName: string;
@@ -36,6 +37,8 @@ export interface Post {
     thumbsUp?: number;
     thumbsDown?: number;
     myReaction?: number | null; // 1 = up, -1 = down, null = none
+    supersededBy?: number | null; // id of the newer post that replaced this one
+    supersedesId?: number | null; // id of the older post this one replaces
 }
 
 export interface Tag {
