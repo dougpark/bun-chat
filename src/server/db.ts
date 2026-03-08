@@ -77,11 +77,18 @@ db.run(`
     tag_id INTEGER,
     user_id INTEGER,
     content TEXT NOT NULL,
+    superseded_by INTEGER REFERENCES posts(id),
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tag_id) REFERENCES tags(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
+    
   );
 `);
+
+// Add superseded_by to posts if not already present (migration)
+try {
+  db.run("ALTER TABLE posts ADD COLUMN superseded_by INTEGER REFERENCES posts(id)");
+} catch (e) { }
 
 // db.run(`
 //   CREATE TABLE IF NOT EXISTS tasks (
@@ -152,10 +159,7 @@ db.run(`
 `);
 db.run(`CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);`);
 
-// Add superseded_by to posts if not already present (migration)
-try {
-  db.run("ALTER TABLE posts ADD COLUMN superseded_by INTEGER REFERENCES posts(id)");
-} catch (e) { }
+
 
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
@@ -163,6 +167,11 @@ db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_c
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#South Zone', 'South of Main',  3, 'Admin', 1, 4);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#Zone Admin', 'Zone discussion',  1, 'Admin', 2, 1);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#Sys Admin', 'System discussion', 1, 'Admin', 3, 1);`);
+
+// insert test users with password = 123 
 db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  user_level, password_hash) VALUES ('Default Admin', 'admin@test.com', '555-123-4567', '123 Main St',  3,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
+db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  user_level, password_hash) VALUES ('Default Zone Admin', 'zone@test.com', '555-123-4567', '123 Main St',  2,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
+db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  user_level, password_hash) VALUES ('Default Approved User', 'user1@test.com', '555-123-4567', '123 Main St',  1,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
+db.run(`INSERT OR IGNORE INTO users (full_name, email, phone_number, physical_address,  user_level, password_hash) VALUES ('Default New User', 'user0@test.com', '555-123-4567', '123 Main St',  0,'$argon2id$v=19$m=65536,t=2,p=1$WagsD+8fEBEXslcqns5tZuSzo73SKlNHIboe3WlCcZs$ZyPTbNiEvvykivvbfaY/tpPmP2vrD8P02vqjpRwJ6UI');`);
 
 export { db };
