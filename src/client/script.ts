@@ -20,6 +20,7 @@ import * as AUTH from './modules/auth.ts';
 import * as ADMIN from './modules/admin.ts';
 import * as CHECKIN from './modules/checkin.ts';
 import * as MEMBERS from './modules/members.ts';
+import * as THEME from './modules/theme.ts';
 
 // Global Declarations are defined in globals.d.ts, 
 
@@ -279,30 +280,8 @@ document.addEventListener('DOMContentLoaded', (): void => {
     AUTH.initAuthForms(authConfig);
     AUTH.initProfileForm();
 
-    // Theme Logic
-    const html = document.documentElement;
-
-    function applyTheme(isDark: boolean): void {
-        if (isDark) {
-            html.classList.add('dark');
-        } else {
-            html.classList.remove('dark');
-        }
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
-
-    // Initialize Theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        applyTheme(true);
-    } else {
-        applyTheme(false);
-    }
-
-    window.toggleTheme = (): void => {
-        const isDark = html.classList.contains('dark');
-        applyTheme(!isDark);
-    };
+    THEME.initTheme();
+    window.toggleTheme = (): void => THEME.toggleTheme();
 
     // WebSocket Setup
     let ws: WebSocket | null;
