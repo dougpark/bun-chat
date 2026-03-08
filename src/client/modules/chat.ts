@@ -157,14 +157,18 @@ function scrollToBottom(): void {
 }
 
 function updateConnectionStatus(isOnline: boolean): void {
-    if (!DOM_CORE.connectionStatus) return;
+    const indicators = [DOM_CORE.connectionStatus, DOM_CORE.homeConnectionStatus].filter(Boolean);
 
     if (isOnline) {
-        DOM_CORE.connectionStatus.classList.remove('bg-red-500');
-        DOM_CORE.connectionStatus.classList.add('bg-emerald-400', 'animate-pulse');
+        indicators.forEach(el => {
+            el.classList.remove('bg-red-500');
+            el.classList.add('bg-emerald-400', 'animate-pulse');
+        });
     } else {
-        DOM_CORE.connectionStatus.classList.remove('bg-emerald-400', 'animate-pulse');
-        DOM_CORE.connectionStatus.classList.add('bg-red-500');
+        indicators.forEach(el => {
+            el.classList.remove('bg-emerald-400', 'animate-pulse');
+            el.classList.add('bg-red-500');
+        });
     }
 }
 

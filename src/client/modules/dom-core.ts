@@ -5,6 +5,7 @@ export namespace DOM_CORE {
     export let postContent: HTMLTextAreaElement;
     export let activeTagName: HTMLElement;
     export let connectionStatus: HTMLDivElement;
+    export let homeConnectionStatus: HTMLSpanElement;
     export let zoneList: HTMLDivElement;
 
     // The single function that "fills" the variables above
@@ -14,6 +15,7 @@ export namespace DOM_CORE {
         DOM_CORE.postContent = document.getElementById('post-content') as HTMLTextAreaElement;
         DOM_CORE.activeTagName = document.getElementById('active-tag-name') as HTMLElement;
         DOM_CORE.connectionStatus = document.getElementById('connection-status') as HTMLDivElement;
+        DOM_CORE.homeConnectionStatus = document.getElementById('home-connection-status') as HTMLSpanElement;
         DOM_CORE.zoneList = document.getElementById('zone-list') as HTMLDivElement;
 
     }

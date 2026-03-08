@@ -59,7 +59,13 @@
             class="absolute inset-0 flex flex-col bg-slate-50 dark:bg-vsdark-secondary z-10 transition-transform duration-300 ease-in-out transform translate-x-0 pb-16">
             <header class="bg-white dark:bg-vsdark-surface text-orange-500 dark:text-vsdark-text p-4 shadow-md">
 
-                <h1 class="text-xl font-bold">Emergency Chat</h1>
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-bold">Emergency Chat</h1>
+                    <div class="flex items-center gap-2">
+                        <span id="home-connection-status" class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                        <span class="text-xs font-mono uppercase text-slate-400">Live</span>
+                    </div>
+                </div>
 
                 <!-- Announcement Display -->
                 <div id="announcement-container" class="mx-4 mt-3 hidden">

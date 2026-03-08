@@ -1,7 +1,7 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-* dashboard - online section and total members section
+
 * dashboard - detect disconnected and offer button to reconnect
 
 * check-in history table and user and admin updates and close
@@ -36,6 +36,7 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 
 
 ### Completed
+* dashboard - online section and total members section
 * users table - add a column for Bio to show on member list
 done - if any help then show banner on top of home with button to member list
 done - member list count of help status
