@@ -143,7 +143,7 @@ function addMessageToChat(post: Post): void {
     const myReaction = post.myReaction ?? null;
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border self-start max-w-[85%] animate-fade-in-up';
+    messageDiv.className = 'bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border animate-fade-in-up';
     messageDiv.dataset.postId = String(postId);
     messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
