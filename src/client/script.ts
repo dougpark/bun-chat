@@ -155,4 +155,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     window.closeAnnouncementModal = ANNOUNCEMENTS.closeAnnouncementModal;
     ANNOUNCEMENTS.initAnnouncementsForm();
 
+    // ========== REACTIONS SHEET ========== //
+    window.closeReactionsSheet = CHAT.closeReactionsSheet;
+
 });

@@ -100,3 +100,11 @@ body {
 .reaction-inactive {
     opacity: 0.4;
 }
+
+/* ========== Reaction Count — tappable ========== */
+.reaction-count-tap {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}

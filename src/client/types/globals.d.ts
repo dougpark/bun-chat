@@ -29,6 +29,7 @@ declare global {
         clearCurrentAnnouncement: () => Promise<void>;
         openAnnouncementModal: () => void;
         closeAnnouncementModal: () => void;
+        closeReactionsSheet: () => void;
     }
 }
 

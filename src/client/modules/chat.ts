@@ -166,12 +166,12 @@ function addMessageToChat(post: Post): void {
                 <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
                     <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
                     <span>Agree</span>
-                    <span class="reaction-up-count font-bold">${thumbsUp > 0 ? thumbsUp : ''}</span>
+                    <span class="reaction-up-count font-bold${thumbsUp > 0 ? ' reaction-count-tap' : ''}">${thumbsUp > 0 ? thumbsUp : ''}</span>
                 </button>
                 <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
                     <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.check}</span>
                     <span>Seen</span>
-                    <span class="reaction-down-count font-bold">${thumbsDown > 0 ? thumbsDown : ''}</span>
+                    <span class="reaction-down-count font-bold${thumbsDown > 0 ? ' reaction-count-tap' : ''}">${thumbsDown > 0 ? thumbsDown : ''}</span>
                 </button>
             </div>
         </div>
@@ -183,6 +183,12 @@ function addMessageToChat(post: Post): void {
     const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
     if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
     if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
+
+    // Attach tap handlers on count spans to show who reacted
+    const upCount = messageDiv.querySelector<HTMLElement>('.reaction-up-count');
+    const downCount = messageDiv.querySelector<HTMLElement>('.reaction-down-count');
+    if (upCount) upCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'agree'); });
+    if (downCount) downCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'seen'); });
 
     DOM_CORE.messageContainer.appendChild(messageDiv);
     scrollToBottom();
@@ -215,8 +221,51 @@ function updateReactionCounts(postId: number, thumbsUp: number, thumbsDown: numb
     if (!msgDiv) return;
     const upCount = msgDiv.querySelector<HTMLElement>('.reaction-up-count');
     const downCount = msgDiv.querySelector<HTMLElement>('.reaction-down-count');
-    if (upCount) upCount.textContent = thumbsUp > 0 ? String(thumbsUp) : '';
-    if (downCount) downCount.textContent = thumbsDown > 0 ? String(thumbsDown) : '';
+    if (upCount) {
+        upCount.textContent = thumbsUp > 0 ? String(thumbsUp) : '';
+        upCount.classList.toggle('reaction-count-tap', thumbsUp > 0);
+    }
+    if (downCount) {
+        downCount.textContent = thumbsDown > 0 ? String(thumbsDown) : '';
+        downCount.classList.toggle('reaction-count-tap', thumbsDown > 0);
+    }
+}
+
+async function openReactionsSheet(postId: number, type: 'agree' | 'seen'): Promise<void> {
+    const sheet = document.getElementById('reactions-sheet');
+    const title = document.getElementById('reactions-sheet-title');
+    const list = document.getElementById('reactions-sheet-list');
+    const empty = document.getElementById('reactions-sheet-empty');
+    if (!sheet || !title || !list || !empty) return;
+
+    title.textContent = type === 'agree' ? '👍 Agreed' : '✓ Seen by';
+    list.innerHTML = '<li class="text-sm text-slate-400 dark:text-vsdark-text-muted text-center py-4">Loading…</li>';
+    empty.classList.add('hidden');
+    sheet.classList.remove('hidden');
+
+    try {
+        const res = await fetch(`/api/posts/${postId}/reactions`);
+        const data = await res.json() as { agree: string[], seen: string[] };
+        const names = type === 'agree' ? data.agree : data.seen;
+
+        list.innerHTML = '';
+        if (names.length === 0) {
+            empty.classList.remove('hidden');
+        } else {
+            names.forEach(name => {
+                const li = document.createElement('li');
+                li.className = 'text-sm text-slate-800 dark:text-vsdark-text py-1.5 border-b border-slate-100 dark:border-vsdark-border/40 last:border-0';
+                li.textContent = name;
+                list.appendChild(li);
+            });
+        }
+    } catch {
+        list.innerHTML = '<li class="text-sm text-red-500 text-center py-4">Failed to load.</li>';
+    }
+}
+
+export function closeReactionsSheet(): void {
+    document.getElementById('reactions-sheet')?.classList.add('hidden');
 }
 
 function updateReactionButtonStyles(msgDiv: HTMLElement, activeReaction: number | null): void {

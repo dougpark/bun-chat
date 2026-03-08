@@ -986,6 +986,38 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Handle GET /api/posts/:id/reactions — returns names grouped by reaction type
+        const postReactionsMatch = url.pathname.match(/^\/api\/posts\/(\d+)\/reactions$/);
+        if (postReactionsMatch && req.method === "GET") {
+            const postId = parseInt(postReactionsMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP")
+                .get({ $id: sessionId }) as { user_id: number } | null;
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            const rows = db.query(`
+                SELECT u.full_name, r.reaction
+                FROM post_reactions r
+                JOIN users u ON r.user_id = u.id
+                WHERE r.post_id = $postId
+                ORDER BY r.reaction DESC, u.full_name ASC
+            `).all({ $postId: postId }) as { full_name: string, reaction: number }[];
+
+            const agree = rows.filter(r => r.reaction === 1).map(r => r.full_name);
+            const seen = rows.filter(r => r.reaction === -1).map(r => r.full_name);
+
+            return new Response(JSON.stringify({ agree, seen }), {
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
