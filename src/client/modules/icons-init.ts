@@ -17,6 +17,8 @@ export namespace ICONS {
         inject('.icon-settings', ICONS_SVG.settings);
         inject('.icon-admin', ICONS_SVG.admin);
         inject('.icon-zones', ICONS_SVG.zones);
+        inject('.icon-user', ICONS_SVG.user);
+        inject('.icon-logout', ICONS_SVG.logout);
     };
 }
 // export { initIcons };
