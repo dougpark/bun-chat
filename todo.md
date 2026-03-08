@@ -3,7 +3,7 @@
 ## Must Have Features
 * dashboard - online section and total members section
 * dashboard - detect disconnected and offer button to reconnect
-* users table - add a column for description/ to show on member list
+* users table - add a column for Bio to show on member list
 * check-in history table and user and admin updates and close
 * 
 * reactions to a post - up, down, seen, done
