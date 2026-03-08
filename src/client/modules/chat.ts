@@ -4,6 +4,7 @@ import type { DashboardData, Post, Tag } from '../types/types.ts';
 import { DOM_CORE } from './dom-core.ts';
 import * as NAV from './navigation.ts';
 import * as DASHBOARD from './dashboard.ts';
+import { linkify } from './linkify.ts';
 
 // ========== STATE ========== //
 let ws: WebSocket | null = null;
@@ -139,8 +140,8 @@ function addMessageToChat(post: Post): void {
     const dateString = dateObj.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
 
     messageDiv.innerHTML = `
-        <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1 mb-1">${post.userName}</p>
-        <p class="text-slate-800 dark:text-vsdark-text">${post.content}</p>
+        <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1 mb-1">${linkify(post.userName)}</p>
+        <p class="text-slate-800 dark:text-vsdark-text">${linkify(post.content)}</p>
         <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
     `;
 

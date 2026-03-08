@@ -1,28 +1,13 @@
 // src/client/modules/announcements.ts
 import { ZONE_LEVELS } from '../../shared/constants.ts';
 import type { Announcement } from '../types/types.ts';
+import { linkify } from './linkify.ts';
 
 // ========== STATE ========== //
 let currentAnnouncementId: number | null = null;
 
 // Announcements longer than this threshold are clamped in the banner; a "Read more" button reveals the full text in a modal.
 const READMORE_THRESHOLD = 120;
-
-// Escapes HTML special characters to prevent injection, then wraps http/https URLs in
-// clickable <a> tags. Must escape BEFORE linkifying so injected angle brackets can't
-// smuggle tags through a crafted URL like "https://x.com/<script>alert(1)</script>".
-function linkify(text: string): string {
-    const escaped = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    return escaped.replace(
-        /https?:\/\/[^\s<>"']+/g,
-        url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 break-all">${url}</a>`
-    );
-}
 
 // ========== HOME VIEW BANNER ========== //
 export function displayAnnouncement(announcement: Announcement | null): void {
