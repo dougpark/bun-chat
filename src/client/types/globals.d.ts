@@ -26,6 +26,8 @@ declare global {
         openZoneEdit: (zoneId: number) => Promise<void>;
         closeZoneEdit: () => void;
         clearCurrentAnnouncement: () => Promise<void>;
+        openAnnouncementModal: () => void;
+        closeAnnouncementModal: () => void;
     }
 }
 

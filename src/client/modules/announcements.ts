@@ -5,12 +5,18 @@ import type { Announcement } from '../types/types.ts';
 // ========== STATE ========== //
 let currentAnnouncementId: number | null = null;
 
+// Announcements longer than this threshold are clamped in the banner; a "Read more" button reveals the full text in a modal.
+const READMORE_THRESHOLD = 120;
+
 // ========== HOME VIEW BANNER ========== //
 export function displayAnnouncement(announcement: Announcement | null): void {
     const announcementContainer = document.getElementById('announcement-container') as HTMLDivElement;
     const announcementDisplay = document.getElementById('announcement-display') as HTMLDivElement;
     const announcementText = document.getElementById('announcement-text') as HTMLParagraphElement;
     const announcementMeta = document.getElementById('announcement-meta') as HTMLParagraphElement;
+    const readMoreBtn = document.getElementById('announcement-readmore') as HTMLButtonElement;
+    const modalText = document.getElementById('announcement-modal-text') as HTMLParagraphElement;
+    const modalMeta = document.getElementById('announcement-modal-meta') as HTMLParagraphElement;
 
     if (!announcement || !announcement.is_active) {
         announcementContainer.classList.add('hidden');
@@ -38,7 +44,16 @@ export function displayAnnouncement(announcement: Announcement | null): void {
     const date = new Date(timestamp);
     const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    announcementMeta.textContent = `Posted by ${announcement.created_by_user_name} on ${dateStr} at ${timeStr}`;
+    const metaText = `Posted by ${announcement.created_by_user_name} on ${dateStr} at ${timeStr}`;
+    announcementMeta.textContent = metaText;
+
+    // For long announcements: clamp the banner text to 3 lines and show a "Read more" button.
+    // The modal always receives the full text so it's ready to open instantly.
+    const isLong = announcement.announcement_text.length > READMORE_THRESHOLD;
+    announcementText.classList.toggle('line-clamp-3', isLong);
+    if (readMoreBtn) readMoreBtn.classList.toggle('hidden', !isLong);
+    if (modalText) modalText.textContent = announcement.announcement_text;
+    if (modalMeta) modalMeta.textContent = metaText;
 }
 
 export async function fetchAndDisplayAnnouncement(): Promise<void> {
@@ -51,6 +66,17 @@ export async function fetchAndDisplayAnnouncement(): Promise<void> {
     } catch (err) {
         console.error('Error fetching announcement:', err);
     }
+}
+
+// ========== ANNOUNCEMENT MODAL ========== //
+export function openAnnouncementModal(): void {
+    const modal = document.getElementById('announcement-modal') as HTMLDivElement;
+    if (modal) modal.classList.remove('hidden');
+}
+
+export function closeAnnouncementModal(): void {
+    const modal = document.getElementById('announcement-modal') as HTMLDivElement;
+    if (modal) modal.classList.add('hidden');
 }
 
 // ========== ADMIN VIEW ========== //
