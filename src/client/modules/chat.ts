@@ -4,6 +4,7 @@ import type { DashboardData, Post, Tag } from '../types/types.ts';
 import { DOM_CORE } from './dom-core.ts';
 import * as NAV from './navigation.ts';
 import * as DASHBOARD from './dashboard.ts';
+import * as MEMBERS from './members.ts';
 import { linkify } from './linkify.ts';
 
 // ========== STATE ========== //
@@ -74,6 +75,8 @@ export function initWebSocket(): void {
             }
         } else if (data.type === 'DASHBOARD_UPDATE') {
             DASHBOARD.updateDashboard(data as DashboardData);
+        } else if (data.type === 'ONLINE_UPDATE') {
+            MEMBERS.updateOnlineUsers(data.userIds as number[]);
         }
     };
 

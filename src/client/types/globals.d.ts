@@ -14,6 +14,7 @@ declare global {
         openSettings: () => void;
         openMembers: () => Promise<void>;
         toggleHelpFilter: () => void;
+        toggleOnlineFilter: () => void;
         viewCheckInHistory: (userId: number, memberName: string) => Promise<void>;
         openCheckIn: () => void;
         submitCheckIn: (statusType: string) => Promise<void>;

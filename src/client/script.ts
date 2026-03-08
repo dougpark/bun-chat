@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     MEMBERS.initMembers();
     window.openMembers = (): Promise<void> => MEMBERS.openMembers();
     window.toggleHelpFilter = (): void => MEMBERS.toggleHelpFilter();
+    window.toggleOnlineFilter = (): void => MEMBERS.toggleOnlineFilter();
 
     // ========== CHECK-IN ========== //
     CHECKIN.initCheckIn();

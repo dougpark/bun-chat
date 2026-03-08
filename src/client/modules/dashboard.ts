@@ -32,6 +32,9 @@ export function updateDashboard(data: DashboardData): void {
     if (helpEl) helpEl.textContent = String(helpAlerts);
     if (alertsEl) alertsEl.textContent = String(zoneAlerts);
 
+    const onlineEl = document.getElementById('stat-online') as HTMLSpanElement;
+    if (onlineEl) onlineEl.textContent = String(data.online_count ?? 0);
+
     // Visual State Escalation based on highest severity from server
     // Get highest severity from server data, default to 1 (Clear)
     const highestSeverity = Number(data.highest_severity ?? 1);

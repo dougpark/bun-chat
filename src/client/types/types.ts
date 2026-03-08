@@ -10,6 +10,7 @@ export interface DashboardData {
     zone_alerts?: number;
     non_green_count?: number;
     highest_severity?: number;
+    online_count?: number;
     announcement?: Announcement;
 }
 

@@ -7,6 +7,8 @@ import { linkify } from './linkify.ts';
 // ========== STATE ========== //
 let allMembers: Member[] = [];
 let showOnlyHelpNeeded = false;
+let showOnlyOnline = false;
+let onlineUserIds: Set<number> = new Set();
 
 export function initMembers(): void {
     const membersFilter = document.getElementById('members-filter') as HTMLInputElement;
@@ -47,6 +49,23 @@ export function toggleHelpFilter(): void {
     applyMembersFilters();
 }
 
+export function toggleOnlineFilter(): void {
+    showOnlyOnline = !showOnlyOnline;
+
+    const btn = document.getElementById('members-filter-online') as HTMLButtonElement;
+    if (btn) {
+        btn.classList.toggle('bg-green-100');
+        btn.classList.toggle('dark:bg-green-800');
+    }
+
+    applyMembersFilters();
+}
+
+export function updateOnlineUsers(ids: number[]): void {
+    onlineUserIds = new Set(ids);
+    if (allMembers.length > 0) applyMembersFilters();
+}
+
 function applyMembersFilters(): void {
     const membersFilter = document.getElementById('members-filter') as HTMLInputElement;
     if (!membersFilter) {
@@ -60,7 +79,8 @@ function applyMembersFilters(): void {
         const email = String(m.email ?? '').toLowerCase();
         const matchesSearch = !term || fullName.includes(term) || email.includes(term);
         const matchesHelpStatus = !showOnlyHelpNeeded || Number(m.status_id) === 1;
-        return matchesSearch && matchesHelpStatus;
+        const matchesOnline = !showOnlyOnline || onlineUserIds.has(m.id);
+        return matchesSearch && matchesHelpStatus && matchesOnline;
     });
 
     renderMembersList(filtered);
@@ -122,9 +142,13 @@ function renderMembersList(members: Member[]): void {
             `;
         }
 
+        const isOnline = onlineUserIds.has(member.id);
         div.innerHTML = `
             <div class="flex justify-between items-start mb-2">
-                <p class="font-bold text-slate-800 dark:text-vsdark-text">${member.full_name}</p>
+                <div class="flex items-center gap-1.5">
+                    ${isOnline ? '<span class="inline-block w-2 h-2 bg-green-400 rounded-full flex-shrink-0 mt-0.5"></span>' : '<span class="inline-block w-2 h-2 rounded-full flex-shrink-0"></span>'}
+                    <p class="font-bold text-slate-800 dark:text-vsdark-text">${member.full_name}</p>
+                </div>
                 <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-vsdark-input text-slate-800 dark:text-vsdark-text">${memberLevel}</span>
             </div>
             <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mb-1">${member.email}</p>

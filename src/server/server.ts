@@ -38,12 +38,20 @@ async function verifySignature(value: string, signature: string) {
     return expectedSig === signature;
 }
 
+// Track online users: userId -> number of active WebSocket connections
+const onlineConnectionCounts = new Map<number, number>();
+
+function getOnlineUserIds(): number[] {
+    return [...onlineConnectionCounts.keys()];
+}
+
 interface DashboardStats {
     total_online: number;
     recently_ok: number;
     help_alerts: number;
     zone_alerts: number;
     highest_severity: number;
+    online_count: number;
 }
 
 function getDashboardStats(): DashboardStats {
@@ -98,6 +106,7 @@ function getDashboardStats(): DashboardStats {
         help_alerts: activeHelp?.count ?? 0,
         zone_alerts: nonGreenZones?.count ?? 0,
         highest_severity: highestSeverity,
+        online_count: onlineConnectionCounts.size,
     };
 }
 
@@ -891,6 +900,10 @@ const server = Bun.serve<WebSocketData>({
             // Subscribe to post updates channel to refresh tags when new posts arrive
             ws.subscribe("postUpdate");
 
+            // Track this user as online and notify all connected clients
+            onlineConnectionCounts.set(ws.data.userId, (onlineConnectionCounts.get(ws.data.userId) ?? 0) + 1);
+            ws.data.server.publish("dashboard", JSON.stringify({ type: "ONLINE_UPDATE", userIds: getOnlineUserIds() }));
+
             // Send initial tags (filtered by level) with unread counts
             try {
                 const userId = ws.data.userId || 1;
@@ -1100,6 +1113,10 @@ const server = Bun.serve<WebSocketData>({
         },
         close(ws, code, message) {
             console.log(`WebSocket closed: ${ws.remoteAddress}`);
+            const prev = onlineConnectionCounts.get(ws.data.userId) ?? 1;
+            if (prev <= 1) onlineConnectionCounts.delete(ws.data.userId);
+            else onlineConnectionCounts.set(ws.data.userId, prev - 1);
+            ws.data.server.publish("dashboard", JSON.stringify({ type: "ONLINE_UPDATE", userIds: getOnlineUserIds() }));
         },
     },
 });
