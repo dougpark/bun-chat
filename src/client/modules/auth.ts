@@ -2,6 +2,7 @@
 import { DOM_AUTH } from './dom-auth.ts';
 import { USER_LEVELS } from '../../shared/constants.ts';
 import type { User } from '../types/types.ts';
+import * as NAV from './navigation.ts';
 
 // ========== STATE ========== //
 export let currentUserLevel = 0;
@@ -105,7 +106,7 @@ export function initAuthForms(config: AuthConfig): void {
 }
 
 // ========== PROFILE MANAGEMENT ========== //
-export async function openProfile(navigateTo: (view: string) => void): Promise<void> {
+export async function openProfile(): Promise<void> {
     try {
         const res = await fetch('/api/me');
         if (res.ok) {
@@ -128,7 +129,7 @@ export async function openProfile(navigateTo: (view: string) => void): Promise<v
         console.error('Failed to fetch profile', e);
     }
 
-    navigateTo('profile');
+    NAV.navigateTo('profile');
 }
 
 export function initProfileForm(): void {

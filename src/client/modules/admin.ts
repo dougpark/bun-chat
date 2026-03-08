@@ -3,6 +3,7 @@ import { USER_LEVELS } from '../../shared/constants.ts';
 import type { User, Announcement } from '../types/types.ts';
 import { displayCurrentAnnouncement, renderAnnouncementsHistory } from './announcements.ts';
 import * as ZONES from './admin-zones.ts';
+import * as NAV from './navigation.ts';
 
 // Re-export zone functions so script.ts needs no changes
 export { openZoneEdit, closeZoneEdit, renderAdminZoneList, loadZones } from './admin-zones.ts';
@@ -11,15 +12,8 @@ export { openZoneEdit, closeZoneEdit, renderAdminZoneList, loadZones } from './a
 export let allUsers: User[] = [];
 let currentEditingUserId: number | null = null;
 
-// ========== CONFIG ========== //
-let _navigateTo: (view: string) => void;
-let _goBack: () => void;
-
-export function initAdmin(config: { navigateTo: (view: string) => void; goBack: () => void }): void {
-    _navigateTo = config.navigateTo;
-    _goBack = config.goBack;
-
-    ZONES.initAdminZones(config);
+export function initAdmin(): void {
+    ZONES.initAdminZones();
 
     const adminUserFilter = document.getElementById('admin-user-filter') as HTMLInputElement;
     const userEditForm = document.getElementById('user-edit-form') as HTMLFormElement;
@@ -88,7 +82,7 @@ export function initAdmin(config: { navigateTo: (view: string) => void; goBack: 
 
 // ========== NAVIGATION ========== //
 export function openAdmin(): void {
-    _navigateTo('adminNav');
+    NAV.navigateTo('adminNav');
 }
 
 export async function openAdminSection(section: string): Promise<void> {
@@ -104,7 +98,7 @@ export async function openAdminSection(section: string): Promise<void> {
         } catch (e) {
             console.error('Error fetching users:', e);
         }
-        _navigateTo('admin');
+        NAV.navigateTo('admin');
 
     } else if (section === 'zones') {
         try {
@@ -112,7 +106,7 @@ export async function openAdminSection(section: string): Promise<void> {
         } catch (e) {
             console.error('Error fetching zones:', e);
         }
-        _navigateTo('adminZones');
+        NAV.navigateTo('adminZones');
 
     } else if (section === 'announcements') {
         try {
@@ -130,7 +124,7 @@ export async function openAdminSection(section: string): Promise<void> {
         } catch (e) {
             console.error('Error fetching announcements:', e);
         }
-        _navigateTo('announcements');
+        NAV.navigateTo('announcements');
     }
 }
 
@@ -192,9 +186,9 @@ export async function openUserEdit(userId: number): Promise<void> {
     (document.getElementById('user-address-input') as HTMLInputElement).value = user.physical_address || '';
     (document.getElementById('user-level-input') as HTMLSelectElement).value = String(user.user_level || '0');
 
-    _navigateTo('userEdit');
+    NAV.navigateTo('userEdit');
 }
 
 export function closeUserEdit(): void {
-    _goBack();
+    NAV.goBack();
 }

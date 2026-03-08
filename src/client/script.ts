@@ -10,7 +10,7 @@
 
 // import { ICONS_SVG } from './modules/icons_svg.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
-import type { DashboardData, Announcement, Post, Tag, User, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
+import type { DashboardData, Announcement, Post, Tag, User, CheckIn } from './types/types.ts';
 import { ICONS } from './modules/icons-init.ts';
 import { DOM_CORE } from './modules/dom-core.ts';
 import { DOM_AUTH } from './modules/dom-auth.ts';
@@ -21,6 +21,7 @@ import * as ADMIN from './modules/admin.ts';
 import * as CHECKIN from './modules/checkin.ts';
 import * as MEMBERS from './modules/members.ts';
 import * as THEME from './modules/theme.ts';
+import * as NAV from './modules/navigation.ts';
 
 // Global Declarations are defined in globals.d.ts, 
 
@@ -29,20 +30,6 @@ document.addEventListener('DOMContentLoaded', (): void => {
     // DOM Core Elements Initialization
     DOM_CORE.init();
 
-    // View Management
-    const viewHome = document.getElementById('view-home') as HTMLDivElement;
-    const viewChat = document.getElementById('view-chat') as HTMLDivElement;
-    const viewSettings = document.getElementById('view-settings') as HTMLDivElement;
-    const viewProfile = document.getElementById('view-profile') as HTMLDivElement;
-    const viewAdmin = document.getElementById('view-admin') as HTMLDivElement;
-    const viewAdminNav = document.getElementById('view-admin-nav') as HTMLDivElement;
-    const viewAdminZones = document.getElementById('view-admin-zones') as HTMLDivElement;
-    const viewZoneEdit = document.getElementById('view-zone-edit') as HTMLDivElement;
-    const viewUserEdit = document.getElementById('view-user-edit') as HTMLDivElement;
-    const viewAnnouncements = document.getElementById('view-announcements') as HTMLDivElement;
-    const viewMembers = document.getElementById('view-members') as HTMLDivElement;
-    const viewCheckIn = document.getElementById('view-checkin') as HTMLDivElement;
-    const viewCheckInHistory = document.getElementById('view-checkin-history') as HTMLDivElement;
     const viewAuth = document.getElementById('view-auth') as HTMLDivElement;
     const chatHeader = document.getElementById('chat-header') as HTMLDivElement;
     const hazardBar = document.getElementById('hazard-bar') as HTMLDivElement;
@@ -137,132 +124,17 @@ document.addEventListener('DOMContentLoaded', (): void => {
     // Call on page load
     ANNOUNCEMENTS.fetchAndDisplayAnnouncement();
 
-    // ========== CENTRALIZED NAVIGATION SYSTEM ==========
-    const navigationStack: string[] = [];
 
-    const views: Record<string, ViewConfig> = {
-        home: { el: viewHome },
-        chat: { el: viewChat },
-        settings: { el: viewSettings },
-        profile: { el: viewProfile },
-        admin: { el: viewAdmin },
-        adminNav: { el: viewAdminNav },
-        adminZones: { el: viewAdminZones },
-        announcements: { el: viewAnnouncements },
-        zoneEdit: { el: viewZoneEdit },
-        userEdit: { el: viewUserEdit },
-        members: { el: viewMembers },
-        checkin: { el: viewCheckIn },
-        checkinHistory: { el: viewCheckInHistory },
-    };
 
-    function navigateTo(viewName: string, options: NavigateOptions = {}): void {
-        // If leaving chat view, mark current tag as fully read
-        const current = navigationStack[navigationStack.length - 1];
-        if (current === 'chat' && viewName !== 'chat' && currentTag) {
-            // Update last_viewed_at for the tag we're leaving
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
-            }
-        }
 
-        // Close current view
-        if (current && views[current]) {
-            const currentEl = views[current].el;
-            if (currentEl) {
-                currentEl.classList.add('translate-x-full');
-                currentEl.classList.remove('translate-x-0');
-            }
-        }
 
-        // Open new view
-        if (views[viewName]) {
-            const newEl = views[viewName].el;
-            if (newEl) {
-                newEl.classList.remove('translate-x-full');
-                newEl.classList.add('translate-x-0');
-            }
-        }
 
-        navigationStack.push(viewName);
 
-        // Update active nav button state
-        updateNavButtonStates(viewName);
-
-        // Call any callbacks tied to this navigation
-        if (options.onNavigate) {
-            options.onNavigate();
-        }
-    }
-
-    function goBack(): void {
-        if (navigationStack.length > 1) {
-            // If leaving chat view, mark current tag as fully read
-            const current = navigationStack[navigationStack.length - 1];
-            if (current === 'chat' && currentTag) {
-                // Update last_viewed_at for the tag we're leaving
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'openTag', tag: currentTag }));
-                }
-            }
-
-            navigationStack.pop();
-            const previous = navigationStack[navigationStack.length - 1];
-
-            // Close all views and open previous
-            Object.values(views).forEach((view: ViewConfig) => {
-                if (view.el) {
-                    view.el.classList.add('translate-x-full');
-                    view.el.classList.remove('translate-x-0');
-                }
-            });
-
-            if (views[previous]) {
-                const prevEl = views[previous].el;
-                if (prevEl) {
-                    prevEl.classList.remove('translate-x-full');
-                    prevEl.classList.add('translate-x-0');
-                }
-            }
-
-            // Update active nav button state
-            updateNavButtonStates(previous);
-        }
-    }
-
-    // Initialize home view as starting point
-    navigationStack.push('home');
-
-    // Map viewNames to nav button IDs for active state styling
-    const navButtonMap: Record<string, string> = {
-        home: 'nav-home',
-        checkin: 'nav-checkin',
-        members: 'nav-members',
-        settings: 'nav-settings',
-        admin: 'nav-admin'
-    };
-
-    // Update nav button active states
-    function updateNavButtonStates(currentView: string): void {
-        document.querySelectorAll('.nav-btn').forEach((btn: Element) => {
-            btn.classList.remove('text-orange-500', 'dark:text-vsdark-text');
-            btn.classList.add('text-slate-400', 'dark:text-vsdark-text-secondary');
-        });
-
-        const activeButtonId = navButtonMap[currentView];
-        if (activeButtonId) {
-            const activeBtn = document.getElementById(activeButtonId);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-400', 'dark:text-vsdark-text-secondary');
-                activeBtn.classList.add('text-orange-500', 'dark:text-vsdark-text');
-            }
-        }
-    }
-
-    // ========== END NAVIGATION SYSTEM ==========
-
+    let ws: WebSocket | null = null;
     let currentTag = '#general';
     let allTags: Tag[] = [];
+
+    NAV.initNavigation({ getWs: () => ws, getCurrentTag: () => currentTag });
 
     // ========== AUTH LOGIC ========== //
     const authConfig = {
@@ -272,10 +144,9 @@ document.addEventListener('DOMContentLoaded', (): void => {
     };
 
     AUTH.checkAuth(authConfig);
-    updateNavButtonStates('home');
 
     window.toggleAuthMode = (mode: string): void => AUTH.toggleAuthMode(mode);
-    window.openProfile = async (): Promise<void> => AUTH.openProfile(navigateTo);
+    window.openProfile = async (): Promise<void> => AUTH.openProfile();
 
     AUTH.initAuthForms(authConfig);
     AUTH.initProfileForm();
@@ -284,7 +155,6 @@ document.addEventListener('DOMContentLoaded', (): void => {
     window.toggleTheme = (): void => THEME.toggleTheme();
 
     // WebSocket Setup
-    let ws: WebSocket | null;
     function initWebSocket(): void {
         if (ws) return;
         ws = new WebSocket(`ws://${window.location.host}/ws`);
@@ -354,7 +224,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
         DOM_CORE.messageContainer.innerHTML = '';
 
         // Navigate to chat view
-        navigateTo('chat');
+        NAV.navigateTo('chat');
 
         // Send openTag message to update last_viewed_at on server
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -368,7 +238,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     };
 
     window.goHome = (): void => {
-        navigateTo('home', {
+        NAV.navigateTo('home', {
             onNavigate: (): void => {
                 // Request fresh tags with current unread counts when navigating home
                 if (ws && ws.readyState === WebSocket.OPEN) {
@@ -379,14 +249,14 @@ document.addEventListener('DOMContentLoaded', (): void => {
     };
 
     window.openSettings = (): void => {
-        navigateTo('settings');
+        NAV.navigateTo('settings');
     };
 
     window.openMembers = (): Promise<void> => MEMBERS.openMembers();
     window.toggleHelpFilter = (): void => MEMBERS.toggleHelpFilter();
 
-    MEMBERS.initMembers({ navigateTo });
-    CHECKIN.initCheckIn({ navigateTo });
+    MEMBERS.initMembers();
+    CHECKIN.initCheckIn();
     window.viewCheckInHistory = (userId, memberName): Promise<void> => CHECKIN.viewCheckInHistory(userId, memberName);
     window.openCheckIn = (): void => CHECKIN.openCheckIn();
     window.submitCheckIn = (statusType): Promise<void> => CHECKIN.submitCheckIn(statusType);
@@ -558,7 +428,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     };
 
     // ========== ADMIN LOGIC ========== //
-    ADMIN.initAdmin({ navigateTo, goBack });
+    ADMIN.initAdmin();
 
     window.openAdmin = (): void => ADMIN.openAdmin();
     window.openAdminSection = (section: string): Promise<void> => ADMIN.openAdminSection(section);

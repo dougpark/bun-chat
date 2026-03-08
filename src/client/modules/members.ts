@@ -1,17 +1,13 @@
 // src/client/modules/members.ts
 import { USER_LEVELS } from '../../shared/constants.ts';
 import type { Member } from '../types/types.ts';
+import * as NAV from './navigation.ts';
 
 // ========== STATE ========== //
 let allMembers: Member[] = [];
 let showOnlyHelpNeeded = false;
 
-// ========== CONFIG ========== //
-let _navigateTo: (view: string, options?: any) => void;
-
-export function initMembers(config: { navigateTo: (view: string, options?: any) => void }): void {
-    _navigateTo = config.navigateTo;
-
+export function initMembers(): void {
     const membersFilter = document.getElementById('members-filter') as HTMLInputElement;
     if (membersFilter) {
         membersFilter.addEventListener('input', (): void => applyMembersFilters());
@@ -20,7 +16,7 @@ export function initMembers(config: { navigateTo: (view: string, options?: any) 
 
 // ========== NAVIGATION ========== //
 export async function openMembers(): Promise<void> {
-    _navigateTo('members', {
+    NAV.navigateTo('members', {
         onNavigate: async (): Promise<void> => {
             try {
                 const res = await fetch('/api/members');

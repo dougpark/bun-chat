@@ -1,6 +1,7 @@
 // src/client/modules/admin-zones.ts
 import { ZONE_LEVELS, WEATHER_LEVELS } from '../../shared/constants.ts';
 import type { Tag } from '../types/types.ts';
+import * as NAV from './navigation.ts';
 
 // ========== STATE ========== //
 let allZones: Tag[] = [];
@@ -16,14 +17,7 @@ export async function loadZones(): Promise<void> {
     }
 }
 
-// ========== CONFIG ========== //
-let _navigateTo: (view: string) => void;
-let _goBack: () => void;
-
-export function initAdminZones(config: { navigateTo: (view: string) => void; goBack: () => void }): void {
-    _navigateTo = config.navigateTo;
-    _goBack = config.goBack;
-
+export function initAdminZones(): void {
     const adminZoneFilter = document.getElementById('admin-zone-filter') as HTMLInputElement;
     const zoneEditForm = document.getElementById('zone-edit-form') as HTMLFormElement;
 
@@ -142,9 +136,9 @@ export async function openZoneEdit(zoneId: number): Promise<void> {
     (document.getElementById('zone-weather-id-input') as HTMLSelectElement).value = String(zone.id || 1);
     (document.getElementById('zone-person-in-charge-input') as HTMLInputElement).value = '';
 
-    _navigateTo('zoneEdit');
+    NAV.navigateTo('zoneEdit');
 }
 
 export function closeZoneEdit(): void {
-    _goBack();
+    NAV.goBack();
 }

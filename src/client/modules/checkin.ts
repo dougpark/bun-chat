@@ -1,16 +1,12 @@
 // src/client/modules/checkin.ts
 import type { CheckIn } from '../types/types.ts';
 import * as AUTH from './auth.ts';
+import * as NAV from './navigation.ts';
 
 // ========== STATE ========== //
 let currentViewingUserLatestCheckin: CheckIn | null = null;
 
-// ========== CONFIG ========== //
-let _navigateTo: (view: string) => void;
-
-export function initCheckIn(config: { navigateTo: (view: string) => void }): void {
-    _navigateTo = config.navigateTo;
-
+export function initCheckIn(): void {
     const feedbackSubmitBtn = document.getElementById('btn-feedback-submit') as HTMLButtonElement;
     const feedbackCloseBtn = document.getElementById('btn-feedback-close') as HTMLButtonElement;
 
@@ -163,7 +159,7 @@ export async function viewCheckInHistory(userId: number, memberName: string): Pr
             '<p class="text-red-600 dark:text-red-400">Error loading check-in history</p>';
     }
 
-    _navigateTo('checkinHistory');
+    NAV.navigateTo('checkinHistory');
 }
 
 function renderCheckInHistory(checkins: CheckIn[]): void {
@@ -224,7 +220,7 @@ function prependAdminFeedbackEntry(feedbackText: string, statusId: number): void
 
 // ========== CHECK-IN FORM ========== //
 export function openCheckIn(): void {
-    _navigateTo('checkin');
+    NAV.navigateTo('checkin');
 
     const checkinStatus = document.getElementById('checkin-status') as HTMLTextAreaElement;
     checkinStatus.value = '';
