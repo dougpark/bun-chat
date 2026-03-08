@@ -162,12 +162,16 @@ function addMessageToChat(post: Post): void {
     messageDiv.innerHTML = `
         <div class="flex items-center justify-between gap-2 mb-1">
             <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
-            <div class="flex items-center gap-2 shrink-0">
-                <button class="reaction-btn${upActiveClass} flex items-center gap-0.5 text-xs transition-colors select-none" data-reaction="1" title="Thumbs up">
-                    <span class="reaction-icon w-3.5 h-3.5">${ICONS_SVG.thumbsup}</span><span class="reaction-up-count">${thumbsUp > 0 ? thumbsUp : ''}</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
+                    <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
+                    <span>Agree</span>
+                    <span class="reaction-up-count font-bold">${thumbsUp > 0 ? thumbsUp : ''}</span>
                 </button>
-                <button class="reaction-btn${downActiveClass} flex items-center gap-0.5 text-xs transition-colors select-none" data-reaction="-1" title="Thumbs down">
-                    <span class="reaction-icon w-3.5 h-3.5">${ICONS_SVG.thumbsdown}</span><span class="reaction-down-count">${thumbsDown > 0 ? thumbsDown : ''}</span>
+                <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
+                    <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.check}</span>
+                    <span>Seen</span>
+                    <span class="reaction-down-count font-bold">${thumbsDown > 0 ? thumbsDown : ''}</span>
                 </button>
             </div>
         </div>
@@ -176,7 +180,7 @@ function addMessageToChat(post: Post): void {
     `;
 
     // Attach click handlers to both buttons
-    const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-btn'));
+    const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
     if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
     if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
 
@@ -220,11 +224,11 @@ function updateReactionButtonStyles(msgDiv: HTMLElement, activeReaction: number 
     const downBtn = msgDiv.querySelector<HTMLButtonElement>('[data-reaction="-1"]');
     if (upBtn) {
         upBtn.classList.toggle('reaction-active-up', activeReaction === 1);
-        upBtn.classList.toggle('reaction-inactive', activeReaction !== 1);
+        upBtn.classList.toggle('reaction-inactive', activeReaction !== null && activeReaction !== 1);
     }
     if (downBtn) {
         downBtn.classList.toggle('reaction-active-down', activeReaction === -1);
-        downBtn.classList.toggle('reaction-inactive', activeReaction !== -1);
+        downBtn.classList.toggle('reaction-inactive', activeReaction !== null && activeReaction !== -1);
     }
 }
 
