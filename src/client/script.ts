@@ -10,7 +10,7 @@
 
 // import { ICONS_SVG } from './modules/icons_svg.js';
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from '../shared/constants.ts';
-import type { DashboardData, Announcement, Post, Tag, User, Member, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
+import type { DashboardData, Announcement, Post, Tag, User, CheckIn, NavigateOptions, ViewConfig } from './types/types.ts';
 import { ICONS } from './modules/icons-init.ts';
 import { DOM_CORE } from './modules/dom-core.ts';
 import { DOM_AUTH } from './modules/dom-auth.ts';
@@ -19,6 +19,7 @@ import * as ANNOUNCEMENTS from './modules/announcements.ts';
 import * as AUTH from './modules/auth.ts';
 import * as ADMIN from './modules/admin.ts';
 import * as CHECKIN from './modules/checkin.ts';
+import * as MEMBERS from './modules/members.ts';
 
 // Global Declarations are defined in globals.d.ts, 
 
@@ -45,10 +46,6 @@ document.addEventListener('DOMContentLoaded', (): void => {
     const chatHeader = document.getElementById('chat-header') as HTMLDivElement;
     const hazardBar = document.getElementById('hazard-bar') as HTMLDivElement;
     const navAdmin = document.getElementById('nav-admin') as HTMLDivElement;
-    const membersList = document.getElementById('members-list') as HTMLDivElement;
-    const membersFilter = document.getElementById('members-filter') as HTMLInputElement;
-    const membersFilterHelpBtn = document.getElementById('members-filter-help') as HTMLButtonElement;
-    let showOnlyHelpNeeded = false;
 
     // DOM Auth Elements Initialization
     DOM_AUTH.init();
@@ -265,7 +262,6 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
     let currentTag = '#general';
     let allTags: Tag[] = [];
-    let allMembers: Member[] = [];
 
     // ========== AUTH LOGIC ========== //
     const authConfig = {
@@ -407,128 +403,12 @@ document.addEventListener('DOMContentLoaded', (): void => {
         navigateTo('settings');
     };
 
-    window.openMembers = async (): Promise<void> => {
-        navigateTo('members', {
-            onNavigate: async (): Promise<void> => {
-                try {
-                    const res = await fetch('/api/members');
-                    if (res.ok) {
-                        const members = await res.json() as Member[];
-                        allMembers = members;
-                        applyMembersFilters();
-                    } else {
-                        alert('Failed to fetch members');
-                    }
-                } catch (e) {
-                    console.error('Error fetching members:', e);
-                }
-            }
-        });
-    };
+    window.openMembers = (): Promise<void> => MEMBERS.openMembers();
+    window.toggleHelpFilter = (): void => MEMBERS.toggleHelpFilter();
 
-    function renderMembersList(members: Member[]): void {
-        membersList.innerHTML = '';
-        members.forEach((member: Member) => {
-            const div = document.createElement('div');
-            div.className = 'p-3 bg-white dark:bg-vsdark-input rounded border border-slate-200 dark:border-vsdark-border-light';
-
-            const memberLevel = USER_LEVELS[member.user_level as keyof typeof USER_LEVELS]?.label
-                ? `${member.user_level} ${USER_LEVELS[member.user_level as keyof typeof USER_LEVELS].label}`
-                : `${member.user_level} Unknown`;
-
-            // Format check-in info if available
-            let checkinHTML = '';
-            if (member.timestamp) {
-                // Convert SQLite timestamp to ISO format for proper timezone handling
-                let timestamp = member.timestamp;
-                if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
-                    timestamp = timestamp.replace(' ', 'T') + 'Z';
-                }
-                const checkinDate = new Date(timestamp);
-                const dateStr = checkinDate.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
-                const timeStr = checkinDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                // Calculate relative time
-                const now = new Date();
-                const diffMs = (now as any) - (checkinDate as any);
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                let relativeTime;
-                if (diffHours > 0) {
-                    relativeTime = `${diffHours}h ${diffMins % 60}m ago`;
-                } else {
-                    relativeTime = `${diffMins}m ago`;
-                }
-
-                const statusBadgeClass = member.status_id === 0
-                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
-                const statusText = member.status_id === 0 ? 'OK' : 'Help';
-
-                checkinHTML = `
-                    <div class="mt-3 pt-3 border-t border-slate-300 dark:border-vsdark-border-light">
-                        <div class="flex items-center justify-between gap-2 mb-1">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-xs font-semibold ${statusBadgeClass}">${statusText}</span>
-                                <span class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${dateStr} ${timeStr}</span>
-                                <span class="text-xs text-slate-400 dark:text-vsdark-text-muted">(${relativeTime})</span>
-                            </div>
-                            <button type="button" onclick="window.viewCheckInHistory(${member.id}, '${(member.full_name || '').replace(/'/g, "\\'")}')"
-                                class="px-2 py-0.5 bg-vsdark-active5 text-white rounded text-xs font-semibold hover:bg-vsdark-active1 transition-colors whitespace-nowrap">
-                                History
-                            </button>
-                        </div>
-                        <p class="text-xs text-slate-600 dark:text-vsdark-text-dim">${member.status || ''}</p>
-                    </div>
-                `;
-            }
-
-            div.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <p class="font-bold text-slate-800 dark:text-vsdark-text">${member.full_name}</p>
-                    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 dark:bg-vsdark-input text-slate-800 dark:text-vsdark-text">${memberLevel}</span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mb-1">${member.email}</p>
-                <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary">${member.phone_number || 'N/A'}</p>
-                <p class="text-xs text-slate-500 dark:text-vsdark-text-secondary mt-1">${member.physical_address || 'N/A'}</p>
-                ${checkinHTML}
-            `;
-            membersList.appendChild(div);
-        });
-    }
-
-    // Members filter functionality
-    window.toggleHelpFilter = (): void => {
-        showOnlyHelpNeeded = !showOnlyHelpNeeded;
-        membersFilterHelpBtn.classList.toggle('bg-red-100');
-        membersFilterHelpBtn.classList.toggle('dark:bg-red-800');
-        applyMembersFilters();
-    };
-
-    function applyMembersFilters(): void {
-        if (!membersFilter) {
-            renderMembersList(allMembers);
-            return;
-        }
-
-        const term = (membersFilter.value || '').toLowerCase().trim();
-        const filtered = allMembers.filter((m: Member) => {
-            const fullName = String(m.full_name ?? '').toLowerCase();
-            const email = String(m.email ?? '').toLowerCase();
-            const matchesSearch = !term || fullName.includes(term) || email.includes(term);
-            const matchesHelpStatus = !showOnlyHelpNeeded || Number(m.status_id) === 1;
-            return matchesSearch && matchesHelpStatus;
-        });
-        renderMembersList(filtered);
-    }
-
-    if (membersFilter) {
-        membersFilter.addEventListener('input', (): void => applyMembersFilters());
-    }
-
+    MEMBERS.initMembers({ navigateTo });
     CHECKIN.initCheckIn({ navigateTo });
-
-    window.viewCheckInHistory = CHECKIN.viewCheckInHistory;
+    window.viewCheckInHistory = (userId, memberName): Promise<void> => CHECKIN.viewCheckInHistory(userId, memberName);
     window.openCheckIn = (): void => CHECKIN.openCheckIn();
     window.submitCheckIn = (statusType): Promise<void> => CHECKIN.submitCheckIn(statusType);
 
