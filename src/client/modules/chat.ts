@@ -6,6 +6,7 @@ import * as NAV from './navigation.ts';
 import * as DASHBOARD from './dashboard.ts';
 import * as MEMBERS from './members.ts';
 import { linkify } from './linkify.ts';
+import { ICONS_SVG } from './icons-svg.ts';
 
 // ========== STATE ========== //
 let ws: WebSocket | null = null;
@@ -77,6 +78,12 @@ export function initWebSocket(): void {
             DASHBOARD.updateDashboard(data as DashboardData);
         } else if (data.type === 'ONLINE_UPDATE') {
             MEMBERS.updateOnlineUsers(data.userIds as number[]);
+        } else if (data.type === 'reactionUpdate') {
+            updateReactionCounts(
+                data.postId as number,
+                data.thumbsUp as number,
+                data.thumbsDown as number
+            );
         }
     };
 
@@ -130,8 +137,15 @@ function addMessageToChat(post: Post): void {
     // In a real app, server handles subscriptions.
     if (post.tagName && post.tagName !== currentTag) return;
 
+    const postId = post.id ?? 0;
+    const thumbsUp = post.thumbsUp ?? 0;
+    const thumbsDown = post.thumbsDown ?? 0;
+    const myReaction = post.myReaction ?? null;
+
     const messageDiv = document.createElement('div');
     messageDiv.className = 'bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border self-start max-w-[85%] animate-fade-in-up';
+    messageDiv.dataset.postId = String(postId);
+    messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
     // Ensure timestamp is treated as UTC if it's a bare SQLite timestamp string
     let timestamp = post.timestamp;
@@ -142,14 +156,76 @@ function addMessageToChat(post: Post): void {
     const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateString = dateObj.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
 
+    const upActiveClass = myReaction === 1 ? ' reaction-active-up' : '';
+    const downActiveClass = myReaction === -1 ? ' reaction-active-down' : '';
+
     messageDiv.innerHTML = `
-        <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1 mb-1">${linkify(post.userName)}</p>
+        <div class="flex items-center justify-between gap-2 mb-1">
+            <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
+            <div class="flex items-center gap-2 shrink-0">
+                <button class="reaction-btn${upActiveClass} flex items-center gap-0.5 text-xs transition-colors select-none" data-reaction="1" title="Thumbs up">
+                    <span class="reaction-icon w-3.5 h-3.5">${ICONS_SVG.thumbsup}</span><span class="reaction-up-count">${thumbsUp > 0 ? thumbsUp : ''}</span>
+                </button>
+                <button class="reaction-btn${downActiveClass} flex items-center gap-0.5 text-xs transition-colors select-none" data-reaction="-1" title="Thumbs down">
+                    <span class="reaction-icon w-3.5 h-3.5">${ICONS_SVG.thumbsdown}</span><span class="reaction-down-count">${thumbsDown > 0 ? thumbsDown : ''}</span>
+                </button>
+            </div>
+        </div>
         <p class="text-slate-800 dark:text-vsdark-text">${linkify(post.content)}</p>
         <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
     `;
 
+    // Attach click handlers to both buttons
+    const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-btn'));
+    if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
+    if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
+
     DOM_CORE.messageContainer.appendChild(messageDiv);
     scrollToBottom();
+}
+
+function react(postId: number, reaction: number, msgDiv: HTMLElement): void {
+    if (!postId) return;
+    const current = msgDiv.dataset.myReaction ? Number(msgDiv.dataset.myReaction) : null;
+    // Ignore double-click on the same reaction
+    if (current === reaction) return;
+
+    // Optimistically mark the selected button so the UI responds instantly
+    msgDiv.dataset.myReaction = String(reaction);
+    updateReactionButtonStyles(msgDiv, reaction);
+
+    fetch(`/api/posts/${postId}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reaction }),
+    }).catch(() => {
+        // Revert optimistic update on network failure
+        msgDiv.dataset.myReaction = current !== null ? String(current) : '';
+        updateReactionButtonStyles(msgDiv, current);
+    });
+    // Count updates arrive via the reactionUpdate WebSocket broadcast
+}
+
+function updateReactionCounts(postId: number, thumbsUp: number, thumbsDown: number): void {
+    const msgDiv = DOM_CORE.messageContainer.querySelector<HTMLElement>(`[data-post-id="${postId}"]`);
+    if (!msgDiv) return;
+    const upCount = msgDiv.querySelector<HTMLElement>('.reaction-up-count');
+    const downCount = msgDiv.querySelector<HTMLElement>('.reaction-down-count');
+    if (upCount) upCount.textContent = thumbsUp > 0 ? String(thumbsUp) : '';
+    if (downCount) downCount.textContent = thumbsDown > 0 ? String(thumbsDown) : '';
+}
+
+function updateReactionButtonStyles(msgDiv: HTMLElement, activeReaction: number | null): void {
+    const upBtn = msgDiv.querySelector<HTMLButtonElement>('[data-reaction="1"]');
+    const downBtn = msgDiv.querySelector<HTMLButtonElement>('[data-reaction="-1"]');
+    if (upBtn) {
+        upBtn.classList.toggle('reaction-active-up', activeReaction === 1);
+        upBtn.classList.toggle('reaction-inactive', activeReaction !== 1);
+    }
+    if (downBtn) {
+        downBtn.classList.toggle('reaction-active-down', activeReaction === -1);
+        downBtn.classList.toggle('reaction-inactive', activeReaction !== -1);
+    }
 }
 
 function scrollToBottom(): void {

@@ -1,5 +1,7 @@
 # bun-chat Emergency Communications System
 
+ implement a thumbs up/down buttons and counts for each chat post. determine the table structure for a new table to keep track of each selection and show the count in real time for every chat post. it should be optimized to handle 500 active users, so thats a lot of potential responses. do not allow a double click for the same response, but they should be able to change their response and have the system remove their old response and record the new one.
+
 ## Must Have Features
 
 * dashboard - detect disconnected and offer button to reconnect

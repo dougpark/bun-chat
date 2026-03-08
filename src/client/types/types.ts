@@ -33,6 +33,9 @@ export interface Post {
     userName: string;
     tagName: string;
     timestamp: string;
+    thumbsUp?: number;
+    thumbsDown?: number;
+    myReaction?: number | null; // 1 = up, -1 = down, null = none
 }
 
 export interface Tag {

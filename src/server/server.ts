@@ -922,6 +922,70 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        // Handle POST /api/posts/:id/react
+        const postReactMatch = url.pathname.match(/^\/api\/posts\/(\d+)\/react$/);
+        if (postReactMatch && req.method === "POST") {
+            const postId = parseInt(postReactMatch[1]!);
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+            }
+
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP")
+                .get({ $id: sessionId }) as { user_id: number } | null;
+            if (!session) return new Response(JSON.stringify({ error: "Session expired" }), { status: 401 });
+
+            try {
+                const body = await req.json() as any;
+                const reaction = body.reaction;
+
+                if (reaction !== 1 && reaction !== -1) {
+                    return new Response(JSON.stringify({ error: "Invalid reaction value" }), { status: 400 });
+                }
+
+                // Upsert: INSERT OR REPLACE handles both new reactions and changing an existing one
+                db.run(
+                    `INSERT OR REPLACE INTO post_reactions (post_id, user_id, reaction) VALUES ($postId, $userId, $reaction)`,
+                    { $postId: postId, $userId: session.user_id, $reaction: reaction } as any
+                );
+
+                // Aggregate current counts for this post
+                const counts = db.query(`
+                    SELECT
+                        COALESCE(SUM(CASE WHEN reaction = 1 THEN 1 ELSE 0 END), 0) as thumbsUp,
+                        COALESCE(SUM(CASE WHEN reaction = -1 THEN 1 ELSE 0 END), 0) as thumbsDown
+                    FROM post_reactions
+                    WHERE post_id = $postId
+                `).get({ $postId: postId }) as { thumbsUp: number, thumbsDown: number };
+
+                // Resolve which tag channel to publish to
+                const postRow = db.query(`
+                    SELECT t.name as tagName
+                    FROM posts p
+                    JOIN tags t ON p.tag_id = t.id
+                    WHERE p.id = $postId
+                `).get({ $postId: postId }) as { tagName: string } | null;
+
+                if (postRow) {
+                    server.publish(postRow.tagName, JSON.stringify({
+                        type: "reactionUpdate",
+                        postId,
+                        thumbsUp: counts.thumbsUp,
+                        thumbsDown: counts.thumbsDown,
+                    }));
+                }
+
+                return new Response(JSON.stringify({ success: true, ...counts }), {
+                    headers: { "Content-Type": "application/json" }
+                });
+            } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+            }
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
@@ -1009,14 +1073,22 @@ const server = Bun.serve<WebSocketData>({
                 const tag = db.query("SELECT id FROM tags WHERE name = $name").get({ $name: newTag }) as { id: number } | null;
 
                 if (tag) {
+                    const histUserId = ws.data.userId;
                     const posts = db.query(`
-                        SELECT p.content, p.timestamp, u.full_name as userName 
-                        FROM posts p 
-                        JOIN users u ON p.user_id = u.id 
-                        WHERE p.tag_id = $tagId 
-                        ORDER BY p.timestamp DESC 
+                        SELECT
+                            p.id,
+                            p.content,
+                            p.timestamp,
+                            u.full_name as userName,
+                            COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = 1), 0) as thumbsUp,
+                            COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = -1), 0) as thumbsDown,
+                            (SELECT reaction FROM post_reactions WHERE post_id = p.id AND user_id = $userId) as myReaction
+                        FROM posts p
+                        JOIN users u ON p.user_id = u.id
+                        WHERE p.tag_id = $tagId
+                        ORDER BY p.timestamp DESC
                         LIMIT 50
-                    `).all({ $tagId: tag.id }) as { content: string, timestamp: string, userName: string }[];
+                    `).all({ $tagId: tag.id, $userId: histUserId }) as any[];
 
                     // Send history back to client
                     ws.send(JSON.stringify({
@@ -1128,6 +1200,8 @@ const server = Bun.serve<WebSocketData>({
                     userName: user?.full_name || "Unknown",
                     content: content,
                     timestamp: result.created_at,
+                    thumbsUp: 0,
+                    thumbsDown: 0,
                 };
 
                 // 3. Use the server instance to publish to the tag

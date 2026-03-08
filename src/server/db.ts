@@ -139,6 +139,20 @@ db.run(`
   );
 `);
 
+// post_reactions table — one row per (post, user), reaction: 1=up, -1=down
+// Composite PK prevents duplicate votes; index on post_id for fast count aggregation
+db.run(`
+  CREATE TABLE IF NOT EXISTS post_reactions (
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    reaction INTEGER NOT NULL,
+    PRIMARY KEY (post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);`);
+
 // Seed initial data (for demonstration)
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#general','General discussion',  1, 'Admin', 0, 1);`);
 db.run(`INSERT OR IGNORE INTO tags (name, description,   weather_id, person_in_charge, access_level, hazard_level_id) VALUES ('#North Zone', 'North of Main',  2, 'Admin', 0, 2);`);
