@@ -280,6 +280,20 @@ const server = Bun.serve<WebSocketData>({
             }
         }
 
+        if (url.pathname === "/api/logout" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            // Delete the session from DB (best-effort — ignore if already gone)
+            if (sessionId) {
+                try { db.run("DELETE FROM sessions WHERE id = $id", { $id: sessionId } as any); } catch (_) { }
+            }
+            const headers = new Headers({ "Content-Type": "application/json" });
+            // Expire both cookies via server-issued Set-Cookie headers (the only way to clear HttpOnly cookies)
+            headers.append("Set-Cookie", "session_id=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
+            headers.append("Set-Cookie", "session_id_sig=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
+            return new Response(JSON.stringify({ ok: true }), { headers });
+        }
+
         if (url.pathname === "/api/me" && req.method === "GET") {
             const cookies = getCookies(req);
             const sessionId = cookies["session_id"];

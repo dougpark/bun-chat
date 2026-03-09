@@ -125,9 +125,9 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
     // ========== LOGOUT ========== //
     window.logout = (): void => {
-        // Expire both session cookies so the browser won't send them on the next request.
-        document.cookie = 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        document.cookie = 'session_id_sig=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        // Tell the server to delete the session and clear the HttpOnly cookies.
+        // Fire-and-forget: UI resets immediately regardless of network outcome.
+        fetch('/api/logout', { method: 'POST' }).catch(() => { });
 
         // Close the WebSocket cleanly before resetting UI state.
         CHAT.disconnect();

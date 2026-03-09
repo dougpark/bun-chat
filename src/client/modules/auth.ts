@@ -82,7 +82,21 @@ export async function handleAuthSubmit(
         });
 
         if (res.ok) {
-            // Success
+            // Fetch the newly-authenticated user so we can update state and show/hide admin nav
+            const meRes = await fetch('/api/me');
+            if (meRes.ok) {
+                const user: User = await meRes.json();
+                currentUserLevel = user.user_level || 0;
+                currentUserName = user.name || 'Admin';
+                currentUserId = user.id || 0;
+
+                if ((user.user_level || 0) >= 2) {
+                    config.navAdmin.classList.remove('hidden');
+                } else {
+                    config.navAdmin.classList.add('hidden');
+                }
+            }
+
             config.viewAuth.classList.add('hidden');
             config.onAuthSuccess();
             (e.target as HTMLFormElement).reset();

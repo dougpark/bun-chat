@@ -1,14 +1,15 @@
 # bun-chat Emergency Communications System
 
- implement a thumbs up/down buttons and counts for each chat post. determine the table structure for a new table to keep track of each selection and show the count in real time for every chat post. it should be optimized to handle 500 active users, so thats a lot of potential responses. do not allow a double click for the same response, but they should be able to change their response and have the system remove their old response and record the new one.
-
 ## Must Have Features
-
+* image upload with image to text with local Ollama moondream2
+* document upload with local ollama search index
+* @chat to chat with larger Ollama remote aistation
+*
 * dashboard - detect disconnected and offer button to reconnect
 
 * check-in history table and user and admin updates and close
 * 
-* reactions to a post - up, down, seen, done
+
 
 
 ### Optimization Tasks
@@ -38,6 +39,7 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 
 
 ### Completed
+* reactions to a post - up, down, seen, done
 * dashboard - online section and total members section
 * users table - add a column for Bio to show on member list
 done - if any help then show banner on top of home with button to member list
@@ -55,3 +57,5 @@ done - member list count of help status
     1: Verified (Can post/claim tasks)
     2: Zone Admin (Can change status/edit tasks)
     3: System Admin (Can verify users)
+
+    implement a thumbs up/down buttons and counts for each chat post. determine the table structure for a new table to keep track of each selection and show the count in real time for every chat post. it should be optimized to handle 500 active users, so thats a lot of potential responses. do not allow a double click for the same response, but they should be able to change their response and have the system remove their old response and record the new one.
