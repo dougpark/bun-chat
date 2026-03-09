@@ -383,7 +383,7 @@ function addMessageToChat(post: Post): void {
                 <div class="flex items-center gap-1.5 shrink-0">
                     <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
                         <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
-                        <span>Agree</span>
+                        <span>Like</span>
                         <span class="reaction-up-count font-bold${thumbsUp > 0 ? ' reaction-count-tap' : ''}">${thumbsUp > 0 ? thumbsUp : ''}</span>
                     </button>
                     <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
