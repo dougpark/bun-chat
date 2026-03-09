@@ -1195,7 +1195,10 @@ const server = Bun.serve<WebSocketData>({
                 await Bun.write(originalPath, buffer);
 
                 // Generate WebP thumbnail (max 400px wide, quality 80)
+                // .rotate() with no args reads EXIF orientation and physically rotates
+                // the pixels, then strips the tag — fixes sideways iPhone photos.
                 await sharp(buffer)
+                    .rotate()
                     .resize({ width: 400, withoutEnlargement: true })
                     .webp({ quality: 80 })
                     .toFile(thumbPath);
