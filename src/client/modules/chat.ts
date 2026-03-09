@@ -14,6 +14,7 @@ let ws: WebSocket | null = null;
 let currentTag = '#general';
 let allTags: Tag[] = [];
 let pendingSupersede: number | null = null; // postId being superseded
+let pendingImageFile: File | null = null;   // image staged for compose
 
 let chatHeader: HTMLDivElement;
 let hazardBar: HTMLDivElement;
@@ -29,6 +30,22 @@ export function initChat(): void {
 
     DOM_CORE.postForm.addEventListener('submit', async (e: Event): Promise<void> => {
         e.preventDefault();
+
+        // Image-compose path — upload staged file with optional caption
+        if (pendingImageFile !== null) {
+            const caption = DOM_CORE.imageComposeCaption.value.trim();
+            const fileToUpload = pendingImageFile;
+            pendingImageFile = null;
+            URL.revokeObjectURL(DOM_CORE.imageComposePreview.src);
+            DOM_CORE.imageComposePreview.src = '';
+            DOM_CORE.imageComposePanel.classList.add('hidden');
+            DOM_CORE.imageComposePanel.classList.remove('flex');
+            DOM_CORE.imageComposeCaption.value = '';
+            DOM_CORE.chatInputArea.classList.remove('hidden');
+            await uploadImage(fileToUpload, caption);
+            return;
+        }
+
         const content = DOM_CORE.postContent.value.trim();
         if (!content) return;
 
@@ -72,27 +89,27 @@ export function initChat(): void {
     // File selected via file picker
     DOM_CORE.imageFileInput.addEventListener('change', () => {
         const file = DOM_CORE.imageFileInput.files?.[0];
-        if (file) uploadImage(file);
+        if (file) stageImageForCompose(file);
     });
 
     // Drag & drop on the message container
     DOM_CORE.messageContainer.addEventListener('dragover', (e: DragEvent) => {
         e.preventDefault();
-        DOM_CORE.messageContainer.classList.add('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+        DOM_CORE.messageContainer.classList.add('border-2', 'border-dashed', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/10');
     });
 
     DOM_CORE.messageContainer.addEventListener('dragleave', (e: DragEvent) => {
         if (!DOM_CORE.messageContainer.contains(e.relatedTarget as Node)) {
-            DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+            DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/10');
         }
     });
 
     DOM_CORE.messageContainer.addEventListener('drop', (e: DragEvent) => {
         e.preventDefault();
-        DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+        DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/10');
         const file = e.dataTransfer?.files?.[0];
         if (file && file.type.startsWith('image/')) {
-            uploadImage(file);
+            stageImageForCompose(file);
         }
     });
 
@@ -103,6 +120,22 @@ export function initChat(): void {
     });
     document.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Escape') closeImageModal();
+    });
+
+    // Image compose panel — cancel button clears the staged image
+    DOM_CORE.imageComposeCancel.addEventListener('click', () => {
+        if (pendingImageFile !== null) URL.revokeObjectURL(DOM_CORE.imageComposePreview.src);
+        pendingImageFile = null;
+        DOM_CORE.imageComposePreview.src = '';
+        DOM_CORE.imageComposePanel.classList.add('hidden');
+        DOM_CORE.imageComposePanel.classList.remove('flex');
+        DOM_CORE.imageComposeCaption.value = '';
+        DOM_CORE.chatInputArea.classList.remove('hidden');
+    });
+
+    // Image compose panel — send button submits the staged image
+    DOM_CORE.imageComposeSend.addEventListener('click', () => {
+        DOM_CORE.postForm.requestSubmit();
     });
 }
 
@@ -135,12 +168,23 @@ export function supersedePost(oldPostId: number): void {
 
 // ========== IMAGE UPLOAD ========== //
 
-async function uploadImage(file: File): Promise<void> {
+function stageImageForCompose(file: File): void {
+    pendingImageFile = file;
+    DOM_CORE.imageComposePreview.src = URL.createObjectURL(file);
+    DOM_CORE.chatInputArea.classList.add('hidden');
+    DOM_CORE.imageComposePanel.classList.remove('hidden');
+    DOM_CORE.imageComposePanel.classList.add('flex');
+    DOM_CORE.imageComposeCaption.value = '';
+    DOM_CORE.imageComposeCaption.focus();
+}
+
+async function uploadImage(file: File, caption = ''): Promise<void> {
     DOM_CORE.uploadOverlay.classList.remove('hidden');
     DOM_CORE.openFilePickerBtn.disabled = true;
 
     const formData = new FormData();
     formData.append('image', file);
+    if (caption) formData.append('caption', caption);
 
     try {
         const res = await fetch(`/api/upload?tag=${encodeURIComponent(currentTag)}`, {
@@ -163,7 +207,7 @@ async function uploadImage(file: File): Promise<void> {
 
 function openImageModal(thumbUrl: string, fullUrl: string): void {
     DOM_CORE.imageModalImg.src = fullUrl;
-    DOM_CORE.imageModalLink.href = fullUrl;
+    DOM_CORE.imageModalLink.href = `/image-viewer?src=${encodeURIComponent(fullUrl)}`;
     DOM_CORE.imageModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
@@ -233,7 +277,7 @@ export function initWebSocket(): void {
                     id: msg.id,
                     userId: msg.userId,
                     userName: msg.sender ?? msg.userName ?? 'Unknown',
-                    content: '',
+                    content: msg.content ?? '',
                     tagName: msg.tagName,
                     timestamp: msg.timestamp,
                     type: 'image',
@@ -315,10 +359,29 @@ function addMessageToChat(post: Post): void {
     if (post.type === 'image' && post.thumbUrl && post.fullUrl) {
         const thumbUrl = post.thumbUrl;
         const fullUrl = post.fullUrl;
+        const thumbsUp = post.thumbsUp ?? 0;
+        const thumbsDown = post.thumbsDown ?? 0;
+        const myReaction = post.myReaction ?? null;
+        const upActiveClass = myReaction === 1 ? ' reaction-active-up' : '';
+        const downActiveClass = myReaction === -1 ? ' reaction-active-down' : '';
+
+        messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
+
         messageDiv.innerHTML = `
             <div class="flex items-center justify-between gap-2 mb-2">
                 <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
-                <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted">${dateString} ${timeString}</p>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button class="reaction-pill${upActiveClass} flex items-center gap-1 select-none" data-reaction="1">
+                        <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.thumbsup}</span>
+                        <span>Like</span>
+                        <span class="reaction-up-count font-bold${thumbsUp > 0 ? ' reaction-count-tap' : ''}">${thumbsUp > 0 ? thumbsUp : ''}</span>
+                    </button>
+                    <button class="reaction-pill${downActiveClass} flex items-center gap-1 select-none" data-reaction="-1">
+                        <span class="reaction-icon w-3.5 h-3.5 shrink-0">${ICONS_SVG.check}</span>
+                        <span>Seen</span>
+                        <span class="reaction-down-count font-bold${thumbsDown > 0 ? ' reaction-count-tap' : ''}">${thumbsDown > 0 ? thumbsDown : ''}</span>
+                    </button>
+                </div>
             </div>
             <div class="relative group">
                 <img
@@ -334,12 +397,24 @@ function addMessageToChat(post: Post): void {
                     </button>
                 </div>
             </div>
+            ${post.content ? `<p class="text-sm text-slate-700 dark:text-vsdark-text mt-2">${linkify(post.content)}</p>` : ''}
+            <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-2">${dateString} ${timeString}</p>
         `;
         const img = messageDiv.querySelector<HTMLImageElement>('img')!;
         const viewBtn = messageDiv.querySelector<HTMLButtonElement>('.view-full-btn')!;
         const openModal = () => openImageModal(thumbUrl, fullUrl);
         img.addEventListener('click', openModal);
         viewBtn.addEventListener('click', (e) => { e.stopPropagation(); openModal(); });
+
+        const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
+        if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));
+        if (downBtn) downBtn.addEventListener('click', () => react(postId, -1, messageDiv));
+
+        const upCount = messageDiv.querySelector<HTMLElement>('.reaction-up-count');
+        const downCount = messageDiv.querySelector<HTMLElement>('.reaction-down-count');
+        if (upCount) upCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'agree'); });
+        if (downCount) downCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'seen'); });
+
         DOM_CORE.messageContainer.appendChild(messageDiv);
         scrollToBottom();
         return;

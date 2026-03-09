@@ -66,13 +66,16 @@ export async function handleUpload(req: Request, server: Server<WebSocketData>):
             .webp({ quality: 80 })
             .toFile(thumbPath);
 
+        const caption = (formData.get("caption") as string | null)?.trim() ?? "";
+
         const newPost = db.query(`
             INSERT INTO posts (tag_id, user_id, content, type, file_path, thumb_path)
-            VALUES ($tag_id, $user_id, '', 'image', $file_path, $thumb_path)
+            VALUES ($tag_id, $user_id, $content, 'image', $file_path, $thumb_path)
             RETURNING id, timestamp
         `).get({
             $tag_id: tag.id,
             $user_id: session.user_id,
+            $content: caption,
             $file_path: originalPath,
             $thumb_path: thumbPath,
         }) as { id: number, timestamp: string };
@@ -80,6 +83,7 @@ export async function handleUpload(req: Request, server: Server<WebSocketData>):
         const message = {
             id: newPost.id,
             type: "image",
+            content: caption,
             thumbUrl: `/api/download/thumbs/${thumbName}`,
             fullUrl: `/api/download/originals/${originalName}`,
             sender: session.full_name,

@@ -8,6 +8,11 @@ export namespace DOM_CORE {
     export let homeConnectionStatus: HTMLSpanElement;
     export let zoneList: HTMLDivElement;
     export let chatInputArea: HTMLDivElement;
+    export let imageComposePanel: HTMLDivElement;
+    export let imageComposePreview: HTMLImageElement;
+    export let imageComposeCaption: HTMLTextAreaElement;
+    export let imageComposeCancel: HTMLButtonElement;
+    export let imageComposeSend: HTMLButtonElement;
     export let uploadOverlay: HTMLDivElement;
     export let imageFileInput: HTMLInputElement;
     export let openFilePickerBtn: HTMLButtonElement;
@@ -26,6 +31,11 @@ export namespace DOM_CORE {
         DOM_CORE.homeConnectionStatus = document.getElementById('home-connection-status') as HTMLSpanElement;
         DOM_CORE.zoneList = document.getElementById('zone-list') as HTMLDivElement;
         DOM_CORE.chatInputArea = document.getElementById('chat-input-area') as HTMLDivElement;
+        DOM_CORE.imageComposePanel = document.getElementById('image-compose-panel') as HTMLDivElement;
+        DOM_CORE.imageComposePreview = document.getElementById('image-compose-preview') as HTMLImageElement;
+        DOM_CORE.imageComposeCaption = document.getElementById('image-compose-caption') as HTMLTextAreaElement;
+        DOM_CORE.imageComposeCancel = document.getElementById('image-compose-cancel') as HTMLButtonElement;
+        DOM_CORE.imageComposeSend = document.getElementById('image-compose-send') as HTMLButtonElement;
         DOM_CORE.uploadOverlay = document.getElementById('upload-overlay') as HTMLDivElement;
         DOM_CORE.imageFileInput = document.getElementById('image-file-input') as HTMLInputElement;
         DOM_CORE.openFilePickerBtn = document.getElementById('open-file-picker') as HTMLButtonElement;

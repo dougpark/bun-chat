@@ -43,6 +43,48 @@ const server = Bun.serve<WebSocketData>({
         if (pathname.startsWith("/fav/")) return new Response(Bun.file(`./public${pathname}`));
         if (pathname.startsWith("/vendor/")) return new Response(Bun.file(`./public${pathname}`));
 
+        // Image viewer wrapper page (PWA-friendly — includes a back button)
+        if (pathname === "/image-viewer" && method === "GET") {
+            const src = new URL(req.url).searchParams.get("src") ?? "";
+            // Only allow our own download URLs
+            if (!src.startsWith("/api/download/")) return new Response("Bad Request", { status: 400 });
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Image</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; }
+  body { display: flex; align-items: center; justify-content: center; }
+  img { max-width: 100%; max-height: 100vh; object-fit: contain; display: block; }
+  .back {
+    position: fixed;
+    top: max(1rem, env(safe-area-inset-top));
+    left: max(1rem, env(safe-area-inset-left));
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.4rem 0.85rem 0.4rem 0.6rem;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    color: #fff; font-family: system-ui, sans-serif; font-size: 0.95rem;
+    border-radius: 999px; text-decoration: none; border: none; cursor: pointer;
+  }
+  .back:active { background: rgba(0,0,0,0.8); }
+  .back svg { width: 1.1rem; height: 1.1rem; stroke: currentColor; fill: none;
+              stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<button class="back" onclick="history.back()">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Back
+</button>
+<img src="${src.replace(/"/g, '&quot;')}" alt="Full size image">
+</body>
+</html>`;
+            return new Response(html, { headers: { "Content-Type": "text/html" } });
+        }
+
         // WebSocket upgrade
         if (pathname === "/ws") {
             const cookies = getCookies(req);
