@@ -56,6 +56,54 @@ export function initChat(): void {
             DOM_CORE.postContent.value = '';
         }
     });
+
+    // Auto-resize textarea as user types
+    DOM_CORE.postContent.addEventListener('input', () => {
+        DOM_CORE.postContent.style.height = 'auto';
+        DOM_CORE.postContent.style.height = `${DOM_CORE.postContent.scrollHeight}px`;
+    });
+
+    // "+" button opens file picker
+    DOM_CORE.openFilePickerBtn.addEventListener('click', () => {
+        DOM_CORE.imageFileInput.value = '';
+        DOM_CORE.imageFileInput.click();
+    });
+
+    // File selected via file picker
+    DOM_CORE.imageFileInput.addEventListener('change', () => {
+        const file = DOM_CORE.imageFileInput.files?.[0];
+        if (file) uploadImage(file);
+    });
+
+    // Drag & drop on the message container
+    DOM_CORE.messageContainer.addEventListener('dragover', (e: DragEvent) => {
+        e.preventDefault();
+        DOM_CORE.messageContainer.classList.add('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+    });
+
+    DOM_CORE.messageContainer.addEventListener('dragleave', (e: DragEvent) => {
+        if (!DOM_CORE.messageContainer.contains(e.relatedTarget as Node)) {
+            DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+        }
+    });
+
+    DOM_CORE.messageContainer.addEventListener('drop', (e: DragEvent) => {
+        e.preventDefault();
+        DOM_CORE.messageContainer.classList.remove('border-2', 'border-dashed', 'border-orange-500', 'bg-orange-50', 'dark:bg-orange-900/10');
+        const file = e.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            uploadImage(file);
+        }
+    });
+
+    // Image modal — close on button, backdrop click, or Escape
+    DOM_CORE.imageModalClose.addEventListener('click', closeImageModal);
+    DOM_CORE.imageModal.addEventListener('click', (e: MouseEvent) => {
+        if (e.target === DOM_CORE.imageModal) closeImageModal();
+    });
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') closeImageModal();
+    });
 }
 
 export function cancelSupersedeMode(): void {
@@ -83,6 +131,47 @@ export function supersedePost(oldPostId: number): void {
         <span class="flex-1">Posting <strong>update</strong> to original message — the original will be dimmed</span>
         <button type="button" onclick="window.cancelSupersedeMode()" class="ml-auto text-amber-600 dark:text-amber-400 underline">Cancel</button>
     `;
+}
+
+// ========== IMAGE UPLOAD ========== //
+
+async function uploadImage(file: File): Promise<void> {
+    DOM_CORE.uploadOverlay.classList.remove('hidden');
+    DOM_CORE.openFilePickerBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const res = await fetch(`/api/upload?tag=${encodeURIComponent(currentTag)}`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const err = await res.json() as { error?: string };
+            alert(err.error || 'Upload failed');
+        }
+        // On success, the server broadcasts NEW_MESSAGE via WS — no need to handle res body
+    } catch {
+        alert('Network error — image not uploaded');
+    } finally {
+        DOM_CORE.uploadOverlay.classList.add('hidden');
+        DOM_CORE.openFilePickerBtn.disabled = false;
+    }
+}
+
+function openImageModal(thumbUrl: string, fullUrl: string): void {
+    DOM_CORE.imageModalImg.src = fullUrl;
+    DOM_CORE.imageModalLink.href = fullUrl;
+    DOM_CORE.imageModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal(): void {
+    DOM_CORE.imageModal.classList.add('hidden');
+    DOM_CORE.imageModalImg.src = '';
+    document.body.style.overflow = '';
 }
 
 export function initWebSocket(): void {
@@ -136,6 +225,22 @@ export function initWebSocket(): void {
             );
         } else if (data.type === 'postSuperseded') {
             applySupersededStyle(data.oldPostId as number);
+        } else if (data.type === 'NEW_MESSAGE') {
+            // Image message broadcast from upload endpoint
+            const msg = data.message as Record<string, any>;
+            if (msg.tagName === currentTag) {
+                addMessageToChat({
+                    id: msg.id,
+                    userId: msg.userId,
+                    userName: msg.sender ?? msg.userName ?? 'Unknown',
+                    content: '',
+                    tagName: msg.tagName,
+                    timestamp: msg.timestamp,
+                    type: 'image',
+                    thumbUrl: msg.thumbUrl,
+                    fullUrl: msg.fullUrl,
+                } as Post);
+            }
         }
     };
 
@@ -190,20 +295,7 @@ function addMessageToChat(post: Post): void {
     if (post.tagName && post.tagName !== currentTag) return;
 
     const postId = post.id ?? 0;
-    const thumbsUp = post.thumbsUp ?? 0;
-    const thumbsDown = post.thumbsDown ?? 0;
-    const myReaction = post.myReaction ?? null;
     const isSuperseded = !!post.supersededBy;
-    const isUpdate = !!post.supersedesId;
-    const isOwner = post.userId !== undefined && post.userId === currentUserId;
-    const isAdmin = currentUserLevel >= 2;
-    const canSupersede = (isOwner || isAdmin) && !isSuperseded;
-
-    const messageDiv = document.createElement('div');
-    const supersededClass = isSuperseded ? ' post-superseded' : '';
-    messageDiv.className = `bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border animate-fade-in-up${supersededClass}`;
-    messageDiv.dataset.postId = String(postId);
-    messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
     // Ensure timestamp is treated as UTC if it's a bare SQLite timestamp string
     let timestamp = post.timestamp;
@@ -213,6 +305,56 @@ function addMessageToChat(post: Post): void {
     const dateObj = new Date(timestamp);
     const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateString = dateObj.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: '2-digit' });
+
+    const messageDiv = document.createElement('div');
+    const supersededClass = isSuperseded ? ' post-superseded' : '';
+    messageDiv.className = `bg-white dark:bg-vsdark-surface p-3 rounded-lg shadow-sm border border-slate-200 dark:border-vsdark-border animate-fade-in-up${supersededClass}`;
+    messageDiv.dataset.postId = String(postId);
+
+    // ---- IMAGE POST ----
+    if (post.type === 'image' && post.thumbUrl && post.fullUrl) {
+        const thumbUrl = post.thumbUrl;
+        const fullUrl = post.fullUrl;
+        messageDiv.innerHTML = `
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
+                <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted">${dateString} ${timeString}</p>
+            </div>
+            <div class="relative group">
+                <img
+                    src="${thumbUrl}"
+                    alt="Shared image"
+                    loading="lazy"
+                    class="rounded-lg max-w-full object-cover cursor-pointer transition-opacity group-hover:opacity-90"
+                    style="max-height: 240px;"
+                >
+                <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="view-full-btn text-xs bg-black/60 text-white px-2 py-1 rounded-full backdrop-blur-sm">
+                        View full size ↗
+                    </button>
+                </div>
+            </div>
+        `;
+        const img = messageDiv.querySelector<HTMLImageElement>('img')!;
+        const viewBtn = messageDiv.querySelector<HTMLButtonElement>('.view-full-btn')!;
+        const openModal = () => openImageModal(thumbUrl, fullUrl);
+        img.addEventListener('click', openModal);
+        viewBtn.addEventListener('click', (e) => { e.stopPropagation(); openModal(); });
+        DOM_CORE.messageContainer.appendChild(messageDiv);
+        scrollToBottom();
+        return;
+    }
+
+    // ---- TEXT POST ----
+    const thumbsUp = post.thumbsUp ?? 0;
+    const thumbsDown = post.thumbsDown ?? 0;
+    const myReaction = post.myReaction ?? null;
+    const isUpdate = !!post.supersedesId;
+    const isOwner = post.userId !== undefined && post.userId === currentUserId;
+    const isAdmin = currentUserLevel >= 2;
+    const canSupersede = (isOwner || isAdmin) && !isSuperseded;
+
+    messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
     const upActiveClass = myReaction === 1 ? ' reaction-active-up' : '';
     const downActiveClass = myReaction === -1 ? ' reaction-active-down' : '';

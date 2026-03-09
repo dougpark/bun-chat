@@ -1,3 +1,6 @@
+# Ignore data picture uploads 
+data/
+
 # Ignore public folder (built client assets)
 public/
 

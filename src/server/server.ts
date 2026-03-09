@@ -3,6 +3,18 @@ import { db } from "./db";
 import type { Server } from "bun";
 import { password } from "bun";
 import { ZONE_LEVELS, USER_LEVELS, WEATHER_LEVELS } from "../shared/constants.ts";
+import sharp from "sharp";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+
+// Resolve upload dirs relative to the project root (two levels up from src/server/)
+const PROJECT_ROOT = join(import.meta.dir, "../../");
+const UPLOADS_ORIGINALS = join(PROJECT_ROOT, "data/uploads/originals");
+const UPLOADS_THUMBS = join(PROJECT_ROOT, "data/uploads/thumbs");
+
+// Ensure upload directories exist at startup
+await mkdir(UPLOADS_ORIGINALS, { recursive: true });
+await mkdir(UPLOADS_THUMBS, { recursive: true });
 
 const PORT = process.env.PORT || 3010;
 const SESSION_SECRET = process.env.SESSION_SECRET || "super-secret-key-change-me";
@@ -1120,6 +1132,144 @@ const server = Bun.serve<WebSocketData>({
             });
         }
 
+        // POST /api/upload — authenticated multipart image upload
+        if (url.pathname === "/api/upload" && req.method === "POST") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+            }
+
+            const session = db.query(`
+                SELECT s.user_id, u.full_name, u.user_level
+                FROM sessions s JOIN users u ON s.user_id = u.id
+                WHERE s.id = $id AND s.expires_at > CURRENT_TIMESTAMP
+            `).get({ $id: sessionId }) as { user_id: number, full_name: string, user_level: number } | null;
+
+            if (!session) {
+                return new Response(JSON.stringify({ error: "Session expired" }), { status: 401, headers: { "Content-Type": "application/json" } });
+            }
+
+            const zoneTag = url.searchParams.get("tag") || "#general";
+            const tag = db.query("SELECT id FROM tags WHERE name = $name").get({ $name: zoneTag }) as { id: number } | null;
+            if (!tag) {
+                return new Response(JSON.stringify({ error: "Zone not found" }), { status: 400, headers: { "Content-Type": "application/json" } });
+            }
+
+            try {
+                const formData = await req.formData();
+                const uploadedFile = formData.get("image");
+
+                if (!uploadedFile || typeof uploadedFile === "string") {
+                    return new Response(JSON.stringify({ error: "No image provided" }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+
+                // Validate MIME type against allowlist
+                const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic"];
+                if (!allowedTypes.includes(uploadedFile.type)) {
+                    return new Response(JSON.stringify({ error: "Unsupported image type" }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+
+                // Limit file size to 20MB
+                const MAX_BYTES = 20 * 1024 * 1024;
+                const arrayBuf = await uploadedFile.arrayBuffer();
+                if (arrayBuf.byteLength > MAX_BYTES) {
+                    return new Response(JSON.stringify({ error: "File too large (max 20MB)" }), { status: 413, headers: { "Content-Type": "application/json" } });
+                }
+
+                const ext = uploadedFile.type === "image/png" ? "png"
+                    : uploadedFile.type === "image/gif" ? "gif"
+                        : uploadedFile.type === "image/webp" ? "webp"
+                            : "jpg";
+                const uuid = crypto.randomUUID();
+                const originalName = `${uuid}.${ext}`;
+                const thumbName = `${uuid}.webp`;
+                const originalPath = `${UPLOADS_ORIGINALS}/${originalName}`;
+                const thumbPath = `${UPLOADS_THUMBS}/${thumbName}`;
+
+                const buffer = Buffer.from(arrayBuf);
+
+                // Save original
+                await Bun.write(originalPath, buffer);
+
+                // Generate WebP thumbnail (max 400px wide, quality 80)
+                await sharp(buffer)
+                    .resize({ width: 400, withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toFile(thumbPath);
+
+                // Insert image post record
+                const newPost = db.query(`
+                    INSERT INTO posts (tag_id, user_id, content, type, file_path, thumb_path)
+                    VALUES ($tag_id, $user_id, '', 'image', $file_path, $thumb_path)
+                    RETURNING id, timestamp
+                `).get({
+                    $tag_id: tag.id,
+                    $user_id: session.user_id,
+                    $file_path: originalPath,
+                    $thumb_path: thumbPath,
+                }) as { id: number, timestamp: string };
+
+                const message = {
+                    id: newPost.id,
+                    type: "image",
+                    thumbUrl: `/api/download/thumbs/${thumbName}`,
+                    fullUrl: `/api/download/originals/${originalName}`,
+                    sender: session.full_name,
+                    userId: session.user_id,
+                    userName: session.full_name,
+                    tagName: zoneTag,
+                    timestamp: newPost.timestamp,
+                };
+
+                // Broadcast NEW_MESSAGE to the zone's WebSocket channel
+                server.publish(zoneTag, JSON.stringify({
+                    type: "NEW_MESSAGE",
+                    zoneId: tag.id,
+                    message,
+                }));
+
+                return new Response(JSON.stringify({ success: true, message }), {
+                    headers: { "Content-Type": "application/json" },
+                });
+            } catch (e: any) {
+                console.error("Upload error:", e);
+                return new Response(JSON.stringify({ error: "Upload failed" }), { status: 500, headers: { "Content-Type": "application/json" } });
+            }
+        }
+
+        // GET /api/download/:type/:filename — authenticated image serving
+        const downloadMatch = url.pathname.match(/^\/api\/download\/(originals|thumbs)\/([a-f0-9\-]+\.(jpg|png|gif|webp))$/);
+        if (downloadMatch && req.method === "GET") {
+            const cookies = getCookies(req);
+            const sessionId = cookies["session_id"];
+            const sessionSig = cookies["session_id_sig"];
+
+            if (!sessionId || !sessionSig || !(await verifySignature(sessionId, sessionSig))) {
+                return new Response("Unauthorized", { status: 401 });
+            }
+
+            const session = db.query("SELECT user_id FROM sessions WHERE id = $id AND expires_at > CURRENT_TIMESTAMP")
+                .get({ $id: sessionId });
+            if (!session) return new Response("Unauthorized", { status: 401 });
+
+            const typeDir = downloadMatch[1]!;
+            const filename = downloadMatch[2]!;
+            const basePath = typeDir === "originals" ? UPLOADS_ORIGINALS : UPLOADS_THUMBS;
+            const filePath = `${basePath}/${filename}`;
+            const bunFile = Bun.file(filePath);
+
+            if (!(await bunFile.exists())) {
+                return new Response("Not Found", { status: 404 });
+            }
+
+            return new Response(bunFile, {
+                headers: { "Cache-Control": "private, max-age=31536000, immutable" },
+            });
+        }
+
         return new Response("404 Not Found", { status: 404 });
     },
     websocket: {
@@ -1216,6 +1366,9 @@ const server = Bun.serve<WebSocketData>({
                             p.timestamp,
                             p.superseded_by as supersededBy,
                             (SELECT id FROM posts WHERE superseded_by = p.id LIMIT 1) as supersedesId,
+                            COALESCE(p.type, 'text') as type,
+                            p.file_path as filePath,
+                            p.thumb_path as thumbPath,
                             u.full_name as userName,
                             COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = 1), 0) as thumbsUp,
                             COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = -1), 0) as thumbsDown,
@@ -1227,10 +1380,24 @@ const server = Bun.serve<WebSocketData>({
                         LIMIT 50
                     `).all({ $tagId: tag.id, $userId: histUserId }) as any[];
 
+                    // Map file paths to URLs for image posts
+                    const postsWithUrls = posts.reverse().map((p: any) => {
+                        if (p.type === 'image' && p.filePath && p.thumbPath) {
+                            const originalName = p.filePath.split('/').pop() as string;
+                            const thumbName = p.thumbPath.split('/').pop() as string;
+                            return {
+                                ...p,
+                                fullUrl: `/api/download/originals/${originalName}`,
+                                thumbUrl: `/api/download/thumbs/${thumbName}`,
+                            };
+                        }
+                        return p;
+                    });
+
                     // Send history back to client
                     ws.send(JSON.stringify({
                         type: "history",
-                        posts: posts.reverse(), // Send oldest first
+                        posts: postsWithUrls,
                         tag: newTag
                     }));
                 }

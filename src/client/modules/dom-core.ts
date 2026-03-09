@@ -7,6 +7,14 @@ export namespace DOM_CORE {
     export let connectionStatus: HTMLDivElement;
     export let homeConnectionStatus: HTMLSpanElement;
     export let zoneList: HTMLDivElement;
+    export let chatInputArea: HTMLDivElement;
+    export let uploadOverlay: HTMLDivElement;
+    export let imageFileInput: HTMLInputElement;
+    export let openFilePickerBtn: HTMLButtonElement;
+    export let imageModal: HTMLDivElement;
+    export let imageModalImg: HTMLImageElement;
+    export let imageModalLink: HTMLAnchorElement;
+    export let imageModalClose: HTMLButtonElement;
 
     // The single function that "fills" the variables above
     export function init() {
@@ -17,6 +25,13 @@ export namespace DOM_CORE {
         DOM_CORE.connectionStatus = document.getElementById('connection-status') as HTMLDivElement;
         DOM_CORE.homeConnectionStatus = document.getElementById('home-connection-status') as HTMLSpanElement;
         DOM_CORE.zoneList = document.getElementById('zone-list') as HTMLDivElement;
-
+        DOM_CORE.chatInputArea = document.getElementById('chat-input-area') as HTMLDivElement;
+        DOM_CORE.uploadOverlay = document.getElementById('upload-overlay') as HTMLDivElement;
+        DOM_CORE.imageFileInput = document.getElementById('image-file-input') as HTMLInputElement;
+        DOM_CORE.openFilePickerBtn = document.getElementById('open-file-picker') as HTMLButtonElement;
+        DOM_CORE.imageModal = document.getElementById('image-modal') as HTMLDivElement;
+        DOM_CORE.imageModalImg = document.getElementById('image-modal-img') as HTMLImageElement;
+        DOM_CORE.imageModalLink = document.getElementById('image-modal-link') as HTMLAnchorElement;
+        DOM_CORE.imageModalClose = document.getElementById('image-modal-close') as HTMLButtonElement;
     }
 }

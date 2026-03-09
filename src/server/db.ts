@@ -76,12 +76,14 @@ db.run(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tag_id INTEGER,
     user_id INTEGER,
-    content TEXT NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL DEFAULT 'text',
+    file_path TEXT,
+    thumb_path TEXT,
     superseded_by INTEGER REFERENCES posts(id),
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tag_id) REFERENCES tags(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
-    
   );
 `);
 
@@ -158,6 +160,11 @@ db.run(`
   );
 `);
 db.run(`CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);`);
+
+// Migration: add image support columns to posts
+try { db.run("ALTER TABLE posts ADD COLUMN type TEXT NOT NULL DEFAULT 'text'"); } catch (e) { }
+try { db.run("ALTER TABLE posts ADD COLUMN file_path TEXT"); } catch (e) { }
+try { db.run("ALTER TABLE posts ADD COLUMN thumb_path TEXT"); } catch (e) { }
 
 
 

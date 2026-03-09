@@ -160,17 +160,67 @@
                 <!-- Messages will be injected here -->
             </main>
 
+            <!-- Upload progress overlay -->
+            <div id="upload-overlay" class="hidden px-4 pt-2">
+                <div
+                    class="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg text-xs text-orange-700 dark:text-orange-300">
+                    <svg class="animate-spin w-3.5 h-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                    <span>Uploading image…</span>
+                </div>
+            </div>
+
             <!-- Input Area -->
-            <div
-                class="p-4 bg-white dark:bg-vsdark-surface border-t border-slate-200 dark:border-vsdark-border flex-none">
-                <form id="post-form" class="flex gap-2">
-                    <input type="text" id="post-content" placeholder="Message..."
-                        class="flex-1 bg-slate-100 dark:bg-vsdark-input border-none rounded-full px-4 py-2 focus:ring-2 focus:ring-vsdark-active5 outline-none text-slate-800 dark:text-vsdark-text dark:placeholder-vsdark-text-muted">
+            <div id="chat-input-area"
+                class="p-4 bg-white dark:bg-vsdark-surface border-t border-slate-200 dark:border-vsdark-border flex-none transition-colors duration-150">
+                <!-- Hidden file input for image upload -->
+                <input type="file" id="image-file-input" accept="image/*" class="hidden" aria-label="Upload image">
+                <form id="post-form" class="flex gap-2 items-center">
+                    <!-- "+" button to trigger file picker -->
+                    <button type="button" id="open-file-picker" aria-label="Attach image"
+                        class="flex-none w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-vsdark-input text-slate-500 dark:text-vsdark-text-muted hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:text-orange-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                    </button>
+                    <textarea id="post-content" placeholder="Message…" rows="1"
+                        class="flex-1 bg-slate-100 dark:bg-vsdark-input border-none rounded-2xl px-4 py-2 focus:ring-2 focus:ring-vsdark-active5 outline-none text-slate-800 dark:text-vsdark-text dark:placeholder-vsdark-text-muted resize-none leading-5 min-h-[2.25rem] max-h-32 overflow-y-auto"></textarea>
                     <button type="submit"
                         class="bg-vsdark-active5 text-white p-2 rounded-full hover:bg-vsdark-active1 transition-colors flex-none">
                         <span class="icon-send"></span>
                     </button>
                 </form>
+            </div>
+
+            <!-- Image lightbox modal -->
+            <div id="image-modal"
+                class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 safe-area-inset"
+                role="dialog" aria-modal="true" aria-label="Full size image">
+                <button id="image-modal-close"
+                    class="absolute top-4 right-4 text-white/80 hover:text-white p-2 rounded-full bg-black/40 transition-colors"
+                    style="top: max(1rem, env(safe-area-inset-top)); right: max(1rem, env(safe-area-inset-right));"
+                    aria-label="Close image">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+                <div class="flex flex-col items-center gap-3 max-w-full max-h-full">
+                    <img id="image-modal-img" src="" alt="Full size image"
+                        class="max-w-full max-h-[75vh] rounded-lg object-contain shadow-2xl">
+                    <a id="image-modal-link" href="#" target="_blank" rel="noopener noreferrer"
+                        style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));"
+                        class="text-sm text-white/80 hover:text-white underline underline-offset-2">
+                        Open full size in new tab ↗
+                    </a>
+                </div>
             </div>
         </div>
 

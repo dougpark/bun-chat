@@ -39,6 +39,9 @@ export interface Post {
     myReaction?: number | null; // 1 = up, -1 = down, null = none
     supersededBy?: number | null; // id of the newer post that replaced this one
     supersedesId?: number | null; // id of the older post this one replaces
+    type?: 'text' | 'image';
+    thumbUrl?: string;
+    fullUrl?: string;
 }
 
 export interface Tag {
