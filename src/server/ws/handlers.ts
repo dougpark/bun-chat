@@ -226,7 +226,7 @@ export const websocket = {
 
             // If the message uses an AI chat trigger, queue an LLM reply
             // Triggers: @chat, /chat, !chat, chat (first word), ? or . as first character
-            if (/^[?.]|\b(@chat|!chat|\/chat)\b|^chat\b/i.test(content)) {
+            if (/^[?.]|(@chat|!chat|\/chat)\b|^chat\b/i.test(content)) {
                 enqueueChatReply({
                     postId: result.id,
                     userMessage: content,

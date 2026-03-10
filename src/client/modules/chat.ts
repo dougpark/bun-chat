@@ -81,6 +81,14 @@ export function initChat(): void {
         DOM_CORE.postContent.style.height = `${DOM_CORE.postContent.scrollHeight}px`;
     });
 
+    // Enter = send, Shift+Enter = newline
+    DOM_CORE.postContent.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            DOM_CORE.postForm.requestSubmit();
+        }
+    });
+
     // "+" button toggles the popup menu
     const plusMenu = document.getElementById('plus-menu')!;
     DOM_CORE.openFilePickerBtn.addEventListener('click', (e: MouseEvent) => {
@@ -588,7 +596,7 @@ function addMessageToChat(post: Post): void {
 
     // If the post triggers the AI chat bot and no reply is stored yet, show a pending indicator
     // Triggers: @chat, /chat, !chat, chat (first word), ? or . as first character
-    if (/^[?.]|\b(@chat|!chat|\/chat)\b|^chat\b/i.test(userContent) && !storedReply) {
+    if (/^[?.]|(@chat|!chat|\/chat)\b|^chat\b/i.test(userContent) && !storedReply) {
         const pending = document.createElement('div');
         pending.className = 'chat-reply-pending mt-2 pt-2 border-t border-slate-100 dark:border-vsdark-border flex items-center gap-1.5 text-xs text-slate-400 dark:text-vsdark-text-muted animate-pulse';
         pending.innerHTML = `<span class="shrink-0 w-3 h-3">${ICONS_SVG.sparkle}</span><span>@chat is thinking…</span>`;

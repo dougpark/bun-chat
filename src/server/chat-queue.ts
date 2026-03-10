@@ -66,7 +66,7 @@ async function queryChatModel(userMessage: string): Promise<string> {
                 {
                     role: "user",
                     content: userMessage
-                        .replace(/\b(@chat|!chat|\/chat)\b\s*/gi, "") // strip word triggers
+                        .replace(/(@chat|!chat|\/chat)\b\s*/gi, "") // strip word triggers
                         .replace(/^(?:chat\b|[?.]\s*)/i, "")            // strip prefix-only triggers
                         .trim(),
                 },
