@@ -81,11 +81,31 @@ export function initChat(): void {
         DOM_CORE.postContent.style.height = `${DOM_CORE.postContent.scrollHeight}px`;
     });
 
-    // "+" button opens file picker
-    DOM_CORE.openFilePickerBtn.addEventListener('click', () => {
+    // "+" button toggles the popup menu
+    const plusMenu = document.getElementById('plus-menu')!;
+    DOM_CORE.openFilePickerBtn.addEventListener('click', (e: MouseEvent) => {
+        e.stopPropagation();
+        plusMenu.classList.toggle('hidden');
+    });
+
+    // Upload Photo menu item — same behaviour as the old "+" button
+    document.getElementById('menu-upload-photo')!.addEventListener('click', () => {
+        plusMenu.classList.add('hidden');
         DOM_CORE.imageFileInput.value = '';
         DOM_CORE.imageFileInput.click();
     });
+
+    // AI Chat menu item — inserts /chat trigger into the message box
+    document.getElementById('menu-ai-chat')!.addEventListener('click', () => {
+        plusMenu.classList.add('hidden');
+        const ta = DOM_CORE.postContent;
+        ta.value = ta.value ? ta.value.trimEnd() + ' /chat ' : '/chat ';
+        ta.dispatchEvent(new Event('input')); // trigger auto-resize
+        ta.focus();
+    });
+
+    // Close menu when clicking anywhere outside the "+" area
+    document.addEventListener('click', () => plusMenu.classList.add('hidden'));
 
     // File selected via file picker
     DOM_CORE.imageFileInput.addEventListener('change', () => {
