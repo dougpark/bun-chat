@@ -26,6 +26,11 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Chat input safe area — keeps the compose bar above the iPhone home indicator */
+.safe-chat-input {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
 /* iphone safe aeas */
 #app {
     /* Use dvh for the dynamic height we discussed */

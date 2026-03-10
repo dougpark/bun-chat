@@ -44,6 +44,14 @@ export function initNavigation(config: {
     updateNavButtonStates('home');
 }
 
+// Views that should hide the bottom nav bar (saves vertical space on mobile Safari)
+const VIEWS_WITHOUT_NAV = new Set(['chat']);
+
+function setBottomNavVisible(visible: boolean): void {
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.classList.toggle('hidden', !visible);
+}
+
 export function navigateTo(viewName: string, options: NavigateOptions = {}): void {
     const ws = _getWs();
     const currentTag = _getCurrentTag();
@@ -73,6 +81,8 @@ export function navigateTo(viewName: string, options: NavigateOptions = {}): voi
             newEl.classList.add('translate-x-0');
         }
     }
+
+    setBottomNavVisible(!VIEWS_WITHOUT_NAV.has(viewName));
 
     navigationStack.push(viewName);
     updateNavButtonStates(viewName);
@@ -114,6 +124,7 @@ export function goBack(): void {
             }
         }
 
+        setBottomNavVisible(!VIEWS_WITHOUT_NAV.has(previous));
         updateNavButtonStates(previous);
     }
 }
