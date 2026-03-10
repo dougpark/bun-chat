@@ -42,6 +42,7 @@ export interface Post {
     type?: 'text' | 'image';
     thumbUrl?: string;
     fullUrl?: string;
+    aiSummary?: string | null;  // AI-generated image description from Ollama
 }
 
 export interface Tag {

@@ -1,6 +1,7 @@
 import type { Server } from "bun";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import { enqueueImageAnalysis } from "../ai-queue";
 import sharp from "sharp";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -80,6 +81,9 @@ export async function handleUpload(req: Request, server: Server<WebSocketData>):
             $thumb_path: thumbPath,
         }) as { id: number, timestamp: string };
 
+        // Enqueue AI image analysis — runs asynchronously in the background
+        enqueueImageAnalysis({ postId: newPost.id, imagePath: originalPath, tagName: zoneTag, server });
+
         const message = {
             id: newPost.id,
             type: "image",
@@ -91,6 +95,7 @@ export async function handleUpload(req: Request, server: Server<WebSocketData>):
             userName: session.full_name,
             tagName: zoneTag,
             timestamp: newPost.timestamp,
+            aiSummary: null,
         };
 
         server.publish(zoneTag, JSON.stringify({ type: "NEW_MESSAGE", zoneId: tag.id, message }));

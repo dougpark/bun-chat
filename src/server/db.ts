@@ -80,6 +80,7 @@ db.run(`
     type TEXT NOT NULL DEFAULT 'text',
     file_path TEXT,
     thumb_path TEXT,
+    ai_summary TEXT,
     superseded_by INTEGER REFERENCES posts(id),
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tag_id) REFERENCES tags(id),
@@ -165,6 +166,7 @@ db.run(`CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(
 try { db.run("ALTER TABLE posts ADD COLUMN type TEXT NOT NULL DEFAULT 'text'"); } catch (e) { }
 try { db.run("ALTER TABLE posts ADD COLUMN file_path TEXT"); } catch (e) { }
 try { db.run("ALTER TABLE posts ADD COLUMN thumb_path TEXT"); } catch (e) { }
+try { db.run("ALTER TABLE posts ADD COLUMN ai_summary TEXT"); } catch (e) { }
 
 
 

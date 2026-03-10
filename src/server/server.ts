@@ -25,7 +25,7 @@ import {
     handlePostAnnouncement,
     handleClearAnnouncement,
 } from "./routes/announcements";
-import { handleReact, handleGetReactions, handleSupersede } from "./routes/posts";
+import { handleReact, handleGetReactions, handleSupersede, handleGetAiSummary } from "./routes/posts";
 import { handleUpload, handleDownload } from "./routes/upload";
 
 const PORT = process.env.PORT || 3010;
@@ -156,6 +156,8 @@ const server = Bun.serve<WebSocketData>({
         if (postReactionsMatch && method === "GET") return handleGetReactions(req, postReactionsMatch);
         const postSupersedeMatch = pathname.match(/^\/api\/posts\/(\d+)\/supersede$/);
         if (postSupersedeMatch && method === "POST") return handleSupersede(req, postSupersedeMatch, server);
+        const postAiSummaryMatch = pathname.match(/^\/api\/posts\/(\d+)\/ai-summary$/);
+        if (postAiSummaryMatch && method === "GET") return handleGetAiSummary(req, postAiSummaryMatch);
 
         // Upload and download
         if (pathname === "/api/upload" && method === "POST") return handleUpload(req, server);

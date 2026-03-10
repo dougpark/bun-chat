@@ -8,6 +8,7 @@ import * as MEMBERS from './members.ts';
 import { linkify } from './linkify.ts';
 import { ICONS_SVG } from './icons-svg.ts';
 import { currentUserId, currentUserLevel } from './auth.ts';
+import { showAiSummary, handleAiSummaryUpdate } from './ai-summary.ts';
 
 // ========== STATE ========== //
 let ws: WebSocket | null = null;
@@ -269,6 +270,8 @@ export function initWebSocket(): void {
             );
         } else if (data.type === 'postSuperseded') {
             applySupersededStyle(data.oldPostId as number);
+        } else if (data.type === 'aiSummaryReady') {
+            handleAiSummaryUpdate(data.postId as number, data.aiSummary as string);
         } else if (data.type === 'NEW_MESSAGE') {
             // Image message broadcast from upload endpoint
             const msg = data.message as Record<string, any>;
@@ -283,6 +286,7 @@ export function initWebSocket(): void {
                     type: 'image',
                     thumbUrl: msg.thumbUrl,
                     fullUrl: msg.fullUrl,
+                    aiSummary: msg.aiSummary ?? null,
                 } as Post);
             }
         }
@@ -367,6 +371,12 @@ function addMessageToChat(post: Post): void {
 
         messageDiv.dataset.myReaction = myReaction !== null ? String(myReaction) : '';
 
+        const hasAiSummary = !!post.aiSummary;
+        const aiButtonClass = hasAiSummary
+            ? 'text-purple-500 dark:text-purple-400 cursor-pointer hover:text-purple-700'
+            : 'text-slate-300 dark:text-slate-600 cursor-wait animate-pulse';
+        const aiButtonTitle = hasAiSummary ? 'View AI image summary' : 'AI summary pending…';
+
         messageDiv.innerHTML = `
             <div class="flex items-center justify-between gap-2 mb-2">
                 <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}</p>
@@ -398,13 +408,37 @@ function addMessageToChat(post: Post): void {
                 </div>
             </div>
             ${post.content ? `<p class="text-sm text-slate-700 dark:text-vsdark-text mt-2">${linkify(post.content)}</p>` : ''}
-            <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-2">${dateString} ${timeString}</p>
+            <div class="flex items-center justify-between mt-2">
+                <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted">${dateString} ${timeString}</p>
+                <button class="ai-summary-btn flex items-center gap-1 text-[10px] ${aiButtonClass} transition-colors"
+                    data-ai-btn="${postId}"
+                    ${hasAiSummary ? '' : 'disabled'}
+                    title="${aiButtonTitle}">
+                    <span class="w-3 h-3 shrink-0">${ICONS_SVG.sparkle}</span>
+                    <span class="ai-btn-label">${hasAiSummary ? 'AI Summary' : 'Analyzing…'}</span>
+                </button>
+            </div>
         `;
+
+        // Store the summary text in the dataset after setting innerHTML (avoids HTML injection)
+        if (hasAiSummary) {
+            messageDiv.querySelector<HTMLButtonElement>('.ai-summary-btn')!.dataset.aiSummary = post.aiSummary!;
+        }
+
         const img = messageDiv.querySelector<HTMLImageElement>('img')!;
         const viewBtn = messageDiv.querySelector<HTMLButtonElement>('.view-full-btn')!;
         const openModal = () => openImageModal(thumbUrl, fullUrl);
         img.addEventListener('click', openModal);
         viewBtn.addEventListener('click', (e) => { e.stopPropagation(); openModal(); });
+
+        const aiBtn = messageDiv.querySelector<HTMLButtonElement>('.ai-summary-btn');
+        if (aiBtn) {
+            aiBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const summary = aiBtn.dataset.aiSummary;
+                if (summary) showAiSummary(summary);
+            });
+        }
 
         const [upBtn, downBtn] = Array.from(messageDiv.querySelectorAll<HTMLButtonElement>('.reaction-pill'));
         if (upBtn) upBtn.addEventListener('click', () => react(postId, 1, messageDiv));

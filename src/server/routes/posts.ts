@@ -3,6 +3,22 @@ import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 import type { WebSocketData } from "../ws/handlers";
 
+export async function handleGetAiSummary(req: Request, match: RegExpMatchArray): Promise<Response> {
+    const postId = parseInt(match[1]!);
+    const auth = await requireAuth(req);
+    if (auth.error) return auth.error;
+
+    const row = db
+        .query("SELECT ai_summary FROM posts WHERE id = $id")
+        .get({ $id: postId }) as { ai_summary: string | null } | null;
+
+    if (!row) return new Response(JSON.stringify({ error: "Post not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+    return new Response(JSON.stringify({ aiSummary: row.ai_summary }), {
+        headers: { "Content-Type": "application/json" },
+    });
+}
+
 export async function handleReact(req: Request, match: RegExpMatchArray, server: Server<WebSocketData>): Promise<Response> {
     const postId = parseInt(match[1]!);
     const auth = await requireAuth(req);

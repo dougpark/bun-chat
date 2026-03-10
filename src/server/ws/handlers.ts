@@ -97,6 +97,7 @@ export const websocket = {
                         COALESCE(p.type, 'text') as type,
                         p.file_path as filePath,
                         p.thumb_path as thumbPath,
+                        p.ai_summary as aiSummary,
                         u.full_name as userName,
                         COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = 1), 0) as thumbsUp,
                         COALESCE((SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction = -1), 0) as thumbsDown,
