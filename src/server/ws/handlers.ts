@@ -224,8 +224,9 @@ export const websocket = {
             ws.data.server.publish(tagName, JSON.stringify({ type: "newPost", post: newPost }));
             ws.data.server.publish("postUpdate", JSON.stringify({ type: "postUpdate", tag: tagName }));
 
-            // If the message mentions @chat, queue an LLM reply
-            if (/@chat\b/i.test(content)) {
+            // If the message uses an AI chat trigger, queue an LLM reply
+            // Triggers: @chat, /chat, !chat, chat (first word), ? or . as first character
+            if (/^[?.]|\b(@chat|!chat|\/chat)\b|^chat\b/i.test(content)) {
                 enqueueChatReply({
                     postId: result.id,
                     userMessage: content,

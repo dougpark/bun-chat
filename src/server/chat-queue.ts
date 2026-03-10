@@ -63,7 +63,13 @@ async function queryChatModel(userMessage: string): Promise<string> {
             stream: false,
             messages: [
                 { role: "system", content: OLLAMA_CHAT_CONFIG.systemPrompt },
-                { role: "user", content: userMessage.replace(/@chat\s*/gi, "").trim() },
+                {
+                    role: "user",
+                    content: userMessage
+                        .replace(/\b(@chat|!chat|\/chat)\b\s*/gi, "") // strip word triggers
+                        .replace(/^(?:chat\b|[?.]\s*)/i, "")            // strip prefix-only triggers
+                        .trim(),
+                },
             ],
         }),
         signal: AbortSignal.timeout(OLLAMA_CHAT_CONFIG.timeoutMs),
