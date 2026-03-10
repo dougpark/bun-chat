@@ -1,8 +1,7 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
-* image upload with image to text with local Ollama moondream2
-* document upload with local ollama search index
+
 * @chat to chat with larger Ollama remote aistation
 *
 * dashboard - detect disconnected and offer button to reconnect
@@ -39,6 +38,8 @@ Persistence: If you pull the plug on the server and restart it, is the state exa
 
 
 ### Completed
+* image upload with image to text with local Ollama moondream2
+* document upload with local ollama search index
 * reactions to a post - up, down, seen, done
 * dashboard - online section and total members section
 * users table - add a column for Bio to show on member list

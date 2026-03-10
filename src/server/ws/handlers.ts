@@ -1,6 +1,7 @@
 import type { ServerWebSocket } from "bun";
 import { db } from "../db";
 import { onlineConnectionCounts, getOnlineUserIds, getDashboardStats } from "./stats";
+import { enqueueChatReply } from "../chat-queue";
 
 export interface WebSocketData {
     createdAt: number;
@@ -222,6 +223,16 @@ export const websocket = {
 
             ws.data.server.publish(tagName, JSON.stringify({ type: "newPost", post: newPost }));
             ws.data.server.publish("postUpdate", JSON.stringify({ type: "postUpdate", tag: tagName }));
+
+            // If the message mentions @chat, queue an LLM reply
+            if (/@chat\b/i.test(content)) {
+                enqueueChatReply({
+                    postId: result.id,
+                    userMessage: content,
+                    tagName,
+                    server: ws.data.server,
+                });
+            }
         }
 
         try {

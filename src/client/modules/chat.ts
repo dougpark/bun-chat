@@ -219,6 +219,26 @@ function closeImageModal(): void {
     document.body.style.overflow = '';
 }
 
+/**
+ * Appends the @chat LLM reply to an existing post card in the message list.
+ * Called when the server sends a `chatReply` WebSocket event.
+ */
+function appendChatReply(postId: number, reply: string): void {
+    const msgDiv = DOM_CORE.messageContainer.querySelector<HTMLElement>(`[data-post-id="${postId}"]`);
+    if (!msgDiv) return;
+
+    // Remove any pending indicator if it exists
+    msgDiv.querySelector('.chat-reply-pending')?.remove();
+
+    const replyEl = document.createElement('div');
+    replyEl.className = 'chat-reply mt-2 pt-2 border-t border-slate-100 dark:border-vsdark-border flex items-start gap-1.5';
+    replyEl.innerHTML = `
+        <span class="shrink-0 w-3.5 h-3.5 mt-0.5 text-purple-500 dark:text-purple-400">${ICONS_SVG.sparkle}</span>
+        <p class="text-sm text-slate-700 dark:text-vsdark-text leading-snug">${linkify(reply)}</p>
+    `;
+    msgDiv.appendChild(replyEl);
+}
+
 export function initWebSocket(): void {
     if (ws) return;
     ws = new WebSocket(`ws://${window.location.host}/ws`);
@@ -272,6 +292,8 @@ export function initWebSocket(): void {
             applySupersededStyle(data.oldPostId as number);
         } else if (data.type === 'aiSummaryReady') {
             handleAiSummaryUpdate(data.postId as number, data.aiSummary as string);
+        } else if (data.type === 'chatReply') {
+            appendChatReply(data.postId as number, data.reply as string);
         } else if (data.type === 'NEW_MESSAGE') {
             // Image message broadcast from upload endpoint
             const msg = data.message as Record<string, any>;
@@ -502,13 +524,27 @@ function addMessageToChat(post: Post): void {
                     </button>
                 </div>`;
 
+    // Split stored @chat reply from the user's original content (set by server after LLM responds)
+    const chatReplySep = '\n\n**@chat:**';
+    const sepIdx = post.content.indexOf(chatReplySep);
+    const userContent = sepIdx >= 0 ? post.content.slice(0, sepIdx) : post.content;
+    const storedReply = sepIdx >= 0 ? post.content.slice(sepIdx + chatReplySep.length).trim() : null;
+
+    const chatReplyBlock = storedReply
+        ? `<div class="chat-reply mt-2 pt-2 border-t border-slate-100 dark:border-vsdark-border flex items-start gap-1.5">
+               <span class="shrink-0 w-3.5 h-3.5 mt-0.5 text-purple-500 dark:text-purple-400">${ICONS_SVG.sparkle}</span>
+               <p class="text-sm text-slate-700 dark:text-vsdark-text leading-snug">${linkify(storedReply)}</p>
+           </div>`
+        : '';
+
     messageDiv.innerHTML = `
         ${updateBanner}
         <div class="flex items-center justify-between gap-2 mb-1">
             <p class="text-xs font-bold text-orange-600 dark:text-vsdark-active1">${linkify(post.userName)}${supersedeBtn}</p>
             ${reactionsHTML}
         </div>
-        <p class="text-slate-800 dark:text-vsdark-text">${linkify(post.content)}</p>
+        <p class="text-slate-800 dark:text-vsdark-text">${linkify(userContent)}</p>
+        ${chatReplyBlock}
         <p class="text-[10px] text-slate-400 dark:text-vsdark-text-muted mt-1">${dateString} ${timeString}</p>
         ${supersededBanner}
     `;
@@ -528,6 +564,14 @@ function addMessageToChat(post: Post): void {
         const downCount = messageDiv.querySelector<HTMLElement>('.reaction-down-count');
         if (upCount) upCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'agree'); });
         if (downCount) downCount.addEventListener('click', (e) => { e.stopPropagation(); openReactionsSheet(postId, 'seen'); });
+    }
+
+    // If the post triggers @chat and no reply is stored yet, show a pending indicator
+    if (/@chat\b/i.test(userContent) && !storedReply) {
+        const pending = document.createElement('div');
+        pending.className = 'chat-reply-pending mt-2 pt-2 border-t border-slate-100 dark:border-vsdark-border flex items-center gap-1.5 text-xs text-slate-400 dark:text-vsdark-text-muted animate-pulse';
+        pending.innerHTML = `<span class="shrink-0 w-3 h-3">${ICONS_SVG.sparkle}</span><span>@chat is thinking…</span>`;
+        messageDiv.appendChild(pending);
     }
 
     DOM_CORE.messageContainer.appendChild(messageDiv);

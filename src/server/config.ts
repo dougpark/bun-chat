@@ -13,3 +13,17 @@ export const OLLAMA_CONFIG = {
     /** Max time (ms) to wait for a response from Ollama before giving up. */
     timeoutMs: 90_000,
 };
+
+export const OLLAMA_CHAT_CONFIG = {
+    /** Base URL for the chat LLM server. Defaults to the same host as the vision model. */
+    baseUrl: process.env.OLLAMA_CHAT_URL || process.env.OLLAMA_URL || 'http://192.168.1.92:11434',
+
+    /** Chat-capable model — no vision required. */
+    model: process.env.OLLAMA_CHAT_MODEL || 'gemma3:4b',
+
+    /** System prompt — instructs the model to reply succinctly. */
+    systemPrompt: 'You are a concise assistant embedded in a neighborhood emergency chat app. Answer questions directly and briefly — 10 sentences maximum. Avoid filler phrases.',
+
+    /** Max time (ms) to wait for a chat response. */
+    timeoutMs: 60_000,
+};
