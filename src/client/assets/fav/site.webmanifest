@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "Bun Chat",
+  "short_name": "BunChat",
   "icons": [
     {
       "src": "/fav/web-app-manifest-192x192.png",
