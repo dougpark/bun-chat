@@ -20,6 +20,99 @@ let pendingImageFile: File | null = null;   // image staged for compose
 let chatHeader: HTMLDivElement;
 let hazardBar: HTMLDivElement;
 
+// ========== NOTIFICATIONS ========== //
+let unreadCount = 0;
+const BASE_TITLE = document.title || 'bun-chat';
+
+export function showNotificationBanner(): void {
+    // Already granted or permanently denied — nothing to show
+    if ('Notification' in window && Notification.permission !== 'default') return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || (navigator as any).standalone === true; // iOS Safari PWA flag
+
+    // Clear any prior dismissal if now running as a PWA (context changed)
+    if (isStandalone) sessionStorage.removeItem('notif-banner-dismissed');
+
+    // Already dismissed this session (in non-standalone context)
+    if (sessionStorage.getItem('notif-banner-dismissed')) return;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const hasNotificationAPI = 'Notification' in window;
+
+    console.log('[notif] isStandalone:', isStandalone, '| isIOS:', isIOS, '| Notification API:', hasNotificationAPI, '| permission:', hasNotificationAPI ? Notification.permission : 'n/a');
+
+    const banner = document.createElement('div');
+    banner.id = 'notif-banner';
+    banner.className = 'fixed bottom-16 inset-x-0 mx-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg bg-indigo-600 text-white text-sm';
+
+    if (!isStandalone && isIOS) {
+        // iOS regular Safari — must install as PWA first
+        banner.innerHTML = `
+            <span class="flex-1">To enable notifications, tap <strong>Share → Add to Home Screen</strong> to install this app.</span>
+            <button id="notif-banner-dismiss" class="shrink-0 text-indigo-200 hover:text-white font-bold text-lg leading-none">✕</button>
+        `;
+    } else if (isStandalone && isIOS && !hasNotificationAPI) {
+        // Installed as PWA but iOS version is too old (requires 16.4+)
+        banner.innerHTML = `
+            <span class="flex-1">Notifications require <strong>iOS 16.4 or newer</strong>. Please update your device.</span>
+            <button id="notif-banner-dismiss" class="shrink-0 text-indigo-200 hover:text-white font-bold text-lg leading-none">✕</button>
+        `;
+    } else if (hasNotificationAPI) {
+        // Supporting browser — ask via a tap (required for iOS PWA + all browsers)
+        banner.innerHTML = `
+            <span class="flex-1">Enable notifications for new messages?</span>
+            <button id="notif-banner-enable" class="shrink-0 px-3 py-1 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-100">Enable</button>
+            <button id="notif-banner-dismiss" class="shrink-0 text-indigo-200 hover:text-white font-bold text-lg leading-none ml-1">✕</button>
+        `;
+    } else {
+        return; // Non-iOS browser without Notification support — nothing to do
+    }
+
+    document.body.appendChild(banner);
+
+    document.getElementById('notif-banner-enable')?.addEventListener('click', (): void => {
+        Notification.requestPermission().then((perm) => {
+            if (perm === 'granted' || perm === 'denied') banner.remove();
+        });
+    });
+
+    document.getElementById('notif-banner-dismiss')?.addEventListener('click', (): void => {
+        sessionStorage.setItem('notif-banner-dismissed', '1');
+        banner.remove();
+    });
+}
+
+function updateTitleBar(): void {
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${BASE_TITLE}` : BASE_TITLE;
+}
+
+function showBrowserNotification(userName: string, content: string, tagName: string): void {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const body = content.length > 120 ? content.slice(0, 120) + '…' : content;
+    const n = new Notification(`${userName} in ${tagName}`, {
+        body,
+        icon: '/fav/favicon-96x96.png',
+        tag: 'bun-chat-message', // replaces previous notification — no spam
+    });
+    n.onclick = (): void => { window.focus(); n.close(); };
+}
+
+function onNewMessage(post: Post): void {
+    if (post.userId === currentUserId) return; // own message — no notification
+    if (document.visibilityState === 'visible') return; // tab is active — no notification
+    unreadCount++;
+    updateTitleBar();
+    showBrowserNotification(post.userName, post.content || '📷 Image', post.tagName);
+}
+
+// Reset unread count whenever the user returns to the tab
+document.addEventListener('visibilitychange', (): void => {
+    if (document.visibilityState === 'visible') {
+        unreadCount = 0;
+        updateTitleBar();
+    }
+});
+
 // ========== GETTERS ========== //
 export function getWs(): WebSocket | null { return ws; }
 export function getCurrentTag(): string { return currentTag; }
@@ -280,10 +373,12 @@ export function initWebSocket(): void {
         const data = JSON.parse(event.data) as Record<string, any>;
 
         if (data.type === 'newPost') {
+            const newPost = data.post as Post;
             // If it's for the current tag, add to chat
-            if (data.post.tagName === currentTag) {
-                addMessageToChat(data.post as Post);
+            if (newPost.tagName === currentTag) {
+                addMessageToChat(newPost);
             }
+            onNewMessage(newPost);
             // Refresh all tag unread counts
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'requestTags' }));
@@ -325,20 +420,22 @@ export function initWebSocket(): void {
         } else if (data.type === 'NEW_MESSAGE') {
             // Image message broadcast from upload endpoint
             const msg = data.message as Record<string, any>;
+            const imgPost: Post = {
+                id: msg.id,
+                userId: msg.userId,
+                userName: msg.sender ?? msg.userName ?? 'Unknown',
+                content: msg.content ?? '',
+                tagName: msg.tagName,
+                timestamp: msg.timestamp,
+                type: 'image',
+                thumbUrl: msg.thumbUrl,
+                fullUrl: msg.fullUrl,
+                aiSummary: msg.aiSummary ?? null,
+            } as Post;
             if (msg.tagName === currentTag) {
-                addMessageToChat({
-                    id: msg.id,
-                    userId: msg.userId,
-                    userName: msg.sender ?? msg.userName ?? 'Unknown',
-                    content: msg.content ?? '',
-                    tagName: msg.tagName,
-                    timestamp: msg.timestamp,
-                    type: 'image',
-                    thumbUrl: msg.thumbUrl,
-                    fullUrl: msg.fullUrl,
-                    aiSummary: msg.aiSummary ?? null,
-                } as Post);
+                addMessageToChat(imgPost);
             }
+            onNewMessage(imgPost);
         }
     };
 

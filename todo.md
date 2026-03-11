@@ -1,6 +1,8 @@
 # bun-chat Emergency Communications System
 
 ## Must Have Features
+* notifications to users device
+* 
 * implement public_user_id instead of serialized id in user table for rest of code
     public_user_id TEXT UNIQUE DEFAULT (lower(hex(randomblob(16))))
 
@@ -84,20 +86,20 @@ The Emergency Path: Can a user hit "Need Help," and does it show up prominently 
 Persistence: If you pull the plug on the server and restart it, is the state exactly where you left it?
 
 ### Future Features
-- image upload
+- done image upload
 - profile photos
 - browser to phone notifications iphone/android
 - admin and pic
-- llm integration
+- done llm integration
 - EPrep documents/wikipedia access
 
 ### Nice to have Features
 - emoji picker
-- wasm process to resize uploaded images for network and server performance
+- canceled - wasm process to resize uploaded images for network and server performance
 - local map with grid for emergency tracking
 
 ### Design Details
-- Tailwind CSS for styling
+- done - Tailwind CSS for styling
 
 
 ### Completed

@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     const authConfig = {
         viewAuth,
         navAdmin,
-        onAuthSuccess: () => CHAT.initWebSocket()
+        onAuthSuccess: () => { CHAT.initWebSocket(); CHAT.showNotificationBanner(); }
     };
 
     // Hit /api/me to check for an existing session; shows the app or the login screen.
